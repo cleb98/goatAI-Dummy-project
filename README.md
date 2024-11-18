@@ -30,6 +30,9 @@ The dummy dataset is composed of pairs (`x`, `y_true`) in which:
 * `y_true`: copy of `x`, with the light blue circle surrounded with a red 
    line (4 px internal stroke)
 
+  
+(to see the image above, firstly you need to download the dataset running main.py)
+
 |             `x` (input)              |          `y_true` (target)           |
 |:------------------------------------:|:------------------------------------:|
 | ![x0](dataset/samples/train/0_x.png) | ![y0](dataset/samples/train/0_y.png) |
