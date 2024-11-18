@@ -1,0 +1,12 @@
+# training parameters
+LR: 0.00015
+EPOCHS: 64
+MAX_PATIENCE: 64
+
+# model parameters
+DEVICE: cuda
+
+# dataset/dataloader parameters
+N_WORKERS: 4
+BATCH_SIZE: 8
+DS_ROOT: '$PROJECT_DIR/dataset/samples'

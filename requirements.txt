@@ -1,0 +1,8 @@
+albucore==0.0.20
+click==8.1.7
+numpy==2.1.3
+opencv_python==4.10.0
+path==17.0
+PyYAML==6.0.2
+torch==2.5.1
+torchvision==0.20.1
