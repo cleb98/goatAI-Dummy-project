@@ -1,0 +1,32 @@
+ # Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.env/
+
+# PyTorch cache (if using pre-trained models)
+~/.cache/torch/
+~/.torch/
+
+# Checkpoints or model files
+*.pt
+*.pth
+
+# Logs
+logs/
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+#image format
+*.jpg
+*.png
+*.jpeg
+
