@@ -13,6 +13,7 @@ from dataset.dummy_ds import DummyDS
 from models import DummyModel
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
+from post_processing import PostProcessor
 
 
 class Trainer(object):
@@ -50,6 +51,9 @@ class Trainer(object):
             num_workers=1, shuffle=False, pin_memory=True,
             worker_init_fn=val_set.wif_val,
         )
+
+        self.post_proc = PostProcessor(out_ch_order='RGB')
+
 
         # init learning rate scheduler
         self.scheduler = LRScheduler(
@@ -131,7 +135,8 @@ class Trainer(object):
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
 
             y_pred = self.model.forward(x)
-            loss = nn.MSELoss()(y_pred, y_true)
+            # loss = nn.MSELoss()(y_pred, y_true)
+            loss = nn.BCELoss()(y_pred, y_true)
             loss.backward()
             train_losses.append(loss.item())
 
@@ -160,6 +165,23 @@ class Trainer(object):
         # log epoch duration
         print(f' │ T: {time() - start_time:.2f} s')
 
+    def IoU(self, mask1, mask2):
+        """
+        Compute the Intersection over Union (IoU) between two masks.
+
+        :param mask1: numpy array of shape (B, H, W, C)
+        :param mask2: numpy array of shape (B, H, W, C)
+
+        :return: intersection / union: numpy array of shape (B,) with IoU values for each couple of masks in the batch
+        """
+
+        intersection = np.logical_and(mask1, mask2).sum(axis=(1, 2, 3))
+        area1 = mask1.sum(axis=(1, 2, 3))
+        area2 = mask2.sum(axis=(1, 2, 3))
+        union = area1 + area2 - intersection
+        union = np.where(union <= 0, 1e-5, union)
+
+        return intersection / union
 
     def validate(self):
         """
@@ -173,14 +195,22 @@ class Trainer(object):
             x, y_true = sample
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
             y_pred = self.model.forward(x)
+            y_pred = self.post_proc.binary(y_pred)
 
-            loss = nn.MSELoss()(y_pred, y_true)
-            val_losses.append(loss.item())
+            # loss = nn.MSELoss()(y_pred, y_true)
+            # val_losses.append(loss.item())
+
+            iou = self.IoU(y_pred, y_true) # size = (B,)
+            val_losses.append(iou)
 
             # draw results for this step in a 3 rows grid:
             # row #1: input (x)
             # row #2: predicted_output (y_pred)
             # row #3: target (y_true)
+
+            #get the y_pred from c = 1 to c = 3
+            y_pred = y_pred.expand(-1, 3, -1, -1)
+            y_true = y_true.expand(-1, 3, -1, -1)
             grid = torch.cat([x, y_pred, y_true], dim=0)
             grid = tv.utils.make_grid(
                 grid, normalize=True, value_range=(0, 1),
@@ -191,8 +221,11 @@ class Trainer(object):
                 img_tensor=grid, global_step=self.epoch
             )
 
+        val_losses = torch.cat(val_losses) # concatenate all the IoU values
         # save best model
-        mean_val_loss = np.mean(val_losses)
+        # mean_val_loss = np.mean(val_losses)
+        mean_val_loss = val_losses.mean().item()
+
         first_time = self.best_val_loss is None
         if first_time or (mean_val_loss < self.best_val_loss):
             self.best_val_loss = mean_val_loss
@@ -238,3 +271,4 @@ class Trainer(object):
 
             self.epoch += 1
             self.save_ck()
+

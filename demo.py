@@ -15,6 +15,11 @@ def demo(img_path, exp_name):
     :param img_path: path of the image you want to test
     :param exp_name: name of the experiment you want to test
     """
+    try:
+        cv2.imshow('input', cv2.imread(img_path))
+        cv2.waitKey(0)
+    except Exception as e:
+        print(f'Error trying to show input image: {e}')
 
     cnf = Conf(exp_name=exp_name)
 
@@ -44,5 +49,8 @@ def demo(img_path, exp_name):
 
 
 if __name__ == '__main__':
-    __p = Path(__file__).parent / 'dataset' / 'samples' / 'val' / '10_x.png'
-    demo(img_path=__p, exp_name='default')
+    __p = Path(__file__).parent / 'dataset' / 'samples' / 'val' / '20_x.png'
+    try:
+        demo(img_path=__p, exp_name='default')
+    except Exception as e:
+        print(f'Error: {e}')

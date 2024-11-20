@@ -11,4 +11,4 @@ DEVICE: cpu
 # dataset/dataloader parameters
 N_WORKERS: 4
 BATCH_SIZE: 8
-DS_ROOT: '$PROJECT_DIR/dataset/samples'
+DS_ROOT: '$PROJECT_DIR/dataset/samples_seg'

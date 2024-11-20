@@ -9,6 +9,20 @@ import torch
 import yaml
 from path import Path
 
+''' Summary
+- **`random`, `numpy`, and `torch`**: These libraries are used to set random seeds across different modules, which is crucial for reproducibility.
+- **`socket`**: Used to get the hostname of the machine, which is useful for logging, especially when running experiments on different systems.
+- **`yaml`**: This helps in loading configuration settings, making the script more dynamic and easier to adapt to changes.
+- **`path`**: Handles file paths elegantly, making it easy to switch between directories.
+
+#### Use Case
+The script is particularly useful for managing experiments in machine learning. It provides a robust way to:
+1. Set up an experiment environment by configuring paths, devices, and hyperparameters.
+2. Log important metadata like the machine's hostname.
+3. Ensure reproducibility by controlling random seed initialization.
+
+This kind of utility is commonly used in research settings and startups to streamline the process of setting up and running different configurations, ensuring experiments are reproducible and traceable across different systems.
+'''
 
 def set_seed(seed=None):
     # type: (Optional[int]) -> int

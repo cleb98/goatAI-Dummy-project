@@ -24,7 +24,8 @@ class DummyModel(BaseModel):
             nn.Conv2d(64, 32, kernel_size=3, padding=1, stride=1),
             nn.SiLU(inplace=True),
             # ->> final conv
-            nn.Conv2d(32, 3, kernel_size=1)
+            nn.Conv2d(32, 1, kernel_size=1),
+            nn.Sigmoid()
         )
 
 

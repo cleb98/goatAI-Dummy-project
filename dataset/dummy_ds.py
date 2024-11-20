@@ -35,21 +35,6 @@ class DummyDS(Dataset):
 
         ds_dir = self.cnf.ds_root / mode
 
-        #se ds_dir non esiste allora scarica il dataset zippato da:
-        #https://drive.google.com/file/d/1dVKbd_G039Ai6VG7HHc640IRDKTKWouT/view?usp=drive_link
-        #lo unzippa e lo mette in ds_dir
-
-        if not ds_dir.exists():
-            print(f'\n▶ Dataset not found in \'{ds_dir}\'')
-            print('▶ Downloading dataset...')
-            ds_dir.mkdir_p()
-            ds_zip = ds_dir / 'dummy_ds.zip'
-            ds_zip_url = 'https://drive.google.com/file/d/1dVKbd_G039Ai6VG7HHc640IRDKTKWouT/view?usp=drive_link'
-            ds_zip.download_url(ds_zip_url)
-            print('▶ Unzipping dataset...')
-            ds_zip.unpack(ds_dir)
-            print('▶ Dataset downloaded and unzipped successfully!')
-
         self.paths = []
         for x_path in ds_dir.files('*_x.png'):
             y_path = Path(x_path.replace('_x.png', '_y.png'))
@@ -59,17 +44,27 @@ class DummyDS(Dataset):
 
 
     def __len__(self):
+        """
+        :return: number of samples in the dataset
+        """
         # type: () -> int
         return len(self.paths)
 
 
     def __getitem__(self, i):
+        """
+        - reads the i-th sample from the dataset and applies pre-processing
+        :param i: index of the sample you want to retrieve
+        :return: a tuple (x, y) where:
+            ->> x: input RGB image
+            ->> y: target RGB image
+        """
         # type: (int) -> Tuple[torch.Tensor, torch.Tensor]
         x_path, y_path = self.paths[i]
 
         # read input and target (RGB order)
         x_img = cv2.cvtColor(cv2.imread(x_path), cv2.COLOR_BGR2RGB)
-        y_img = cv2.cvtColor(cv2.imread(y_path), cv2.COLOR_BGR2RGB)
+        y_img = cv2.cvtColor(cv2.imread(y_path), cv2.COLOR_BGR2GRAY)
 
         # apply pre processing to input and target
         x = self.pre_proc.apply(x_img)
@@ -77,7 +72,12 @@ class DummyDS(Dataset):
 
         return x, y
 
-
+    '''
+    @staticmethod is a decorator in Python that marks a method as a static method of a class. 
+    It indicates that the method does not operate on an instance of the class and does not modify any class state.
+    Instead, it works independently and can be called without needing to create an instance of the class.
+    Static methods are typically used for utility functions or operations that logically belong to the class but do not require access to class or instance attributes.
+    '''
     @staticmethod
     def wif(worker_id):
         # type: (int) -> None
