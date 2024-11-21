@@ -1,4 +1,8 @@
 import numpy as np
+import torch
+
+# srun --partition=all_serial --account=cbellucci --gres=gpu:1 --pty bash
+
 
 def IoU(mask1, mask2):
     """
@@ -19,7 +23,6 @@ def IoU(mask1, mask2):
 
     return intersection / union
 
-import torch
 
 #create random and binary tensor of size (B, H, W, C)
 B, H, W, C = 8, 128, 128, 1
@@ -31,3 +34,7 @@ print(a, a.shape)
 print(b, b.shape)
 
 print(IoU(a, b).shape, IoU(a, b))
+print(torch.cuda.is_available())
+'''
+srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gpu:1 --pty bash
+'''
