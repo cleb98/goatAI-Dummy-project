@@ -72,8 +72,6 @@ def main(exp_name, conf_file_path, seed):
     trainer = Trainer(cnf=cnf)
     trainer.run()
 
-'''
-srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gpu:1 --pty bash
-'''
+
 if __name__ == '__main__':
     main()

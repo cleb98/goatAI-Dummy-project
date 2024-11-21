@@ -174,8 +174,7 @@ class Trainer(object):
 
         :return: intersection / union: numpy array of shape (B,) with IoU values for each couple of masks in the batch
         """
-        mask1 = mask1.cpu()
-        mask2 = mask2.cpu()
+
         intersection = np.logical_and(mask1, mask2).sum(axis=(1, 2, 3))
         area1 = mask1.sum(axis=(1, 2, 3))
         area2 = mask2.sum(axis=(1, 2, 3))
@@ -210,8 +209,8 @@ class Trainer(object):
             # row #3: target (y_true)
 
             #get the y_pred from c = 1 to c = 3
-            y_pred = y_pred.expand(-1, 3, -1, -1).to(self.cnf.device)
-            y_true = y_true.expand(-1, 3, -1, -1).to(self.cnf.device)
+            y_pred = y_pred.expand(-1, 3, -1, -1)
+            y_true = y_true.expand(-1, 3, -1, -1)
             grid = torch.cat([x, y_pred, y_true], dim=0)
             grid = tv.utils.make_grid(
                 grid, normalize=True, value_range=(0, 1),

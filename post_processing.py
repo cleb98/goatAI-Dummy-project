@@ -24,7 +24,7 @@ class PostProcessor(object):
         :param y_pred:
         :return: y_pred in binary format
         """
-        y_pred = np.where(y_pred.cpu() > 0.5, 1, 0)
+        y_pred = np.where(y_pred > 0.5, 1, 0)
         y_pred = np.clip(y_pred, 0, 1)
         return torch.from_numpy(y_pred)
 
