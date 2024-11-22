@@ -13,9 +13,16 @@ venv/
 # Checkpoints or model files
 *.pt
 *.pth
+*.ck
+
+# Tensorboard logs
+*events.out.tfevents*
+
+# Pycharm stuff
+.idea/
 
 # Logs
-log/
+logs/
 *.log
 
 # Jupyter Notebook checkpoints

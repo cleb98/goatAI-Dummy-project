@@ -77,3 +77,12 @@ srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gp
 '''
 if __name__ == '__main__':
     main()
+
+# pazienza
+# iou
+# metodi o funzioni?
+# path vs pathlib
+# dataset download: no hardcoded paths
+# binary function
+# demo?
+# pep8

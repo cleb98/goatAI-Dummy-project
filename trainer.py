@@ -11,9 +11,26 @@ from torch.utils.tensorboard import SummaryWriter
 from conf import Conf
 from dataset.dummy_ds import DummyDS
 from models import DummyModel
+from post_processing import PostProcessor
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
-from post_processing import PostProcessor
+
+
+def get_batch_iou(masks_pred, masks_true):
+    # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
+    """
+    Compute the intersection over union between two batches of binary masks.
+
+    :param masks_pred: predicted binary masks
+        ->> shape: (B, 1, H, W); values: bin{0, 1}
+    :param masks_true: target binary masks
+        ->> shape: (B, 1, H, W); values: bin{0, 1}
+    :return: IoU value for each element in the batch
+        ->> shape: (B,); values: range[0, 1]
+    """
+    inters = torch.logical_and(masks_pred, masks_true).sum((1, 2, 3))
+    union = torch.logical_or(masks_pred, masks_true).sum((1, 2, 3))
+    return torch.where(union != 0, inters / union, union)
 
 
 class Trainer(object):
@@ -53,7 +70,6 @@ class Trainer(object):
         )
 
         self.post_proc = PostProcessor(out_ch_order='RGB')
-
 
         # init learning rate scheduler
         self.scheduler = LRScheduler(
@@ -150,9 +166,11 @@ class Trainer(object):
             c2 = (not c1 and self.progress_bar.progress == 1)
             if c1 or c2:
                 lr = self.optimizer.param_groups[0]['lr']
-                print(f'\r{self.progress_bar} '
-                      f'│ Loss: {np.mean(train_losses):.6f} '
-                      f'│ LR: {lr:06f}', end='')
+                print(
+                    f'\r{self.progress_bar} '
+                    f'│ Loss: {np.mean(train_losses):.6f} '
+                    f'│ LR: {lr:06f}', end=''
+                    )
             self.progress_bar.inc()
 
         # log average loss of this epoch
@@ -164,6 +182,7 @@ class Trainer(object):
 
         # log epoch duration
         print(f' │ T: {time() - start_time:.2f} s')
+
 
     def IoU(self, mask1, mask2):
         """
@@ -185,6 +204,7 @@ class Trainer(object):
 
         return intersection / union
 
+
     def validate(self):
         """
         Test model on the validation set.
@@ -202,7 +222,7 @@ class Trainer(object):
             # loss = nn.MSELoss()(y_pred, y_true)
             # val_losses.append(loss.item())
 
-            iou = self.IoU(y_pred, y_true) # size = (B,)
+            iou = self.IoU(y_pred, y_true)  # size = (B,)
             val_losses.append(iou)
 
             # draw results for this step in a 3 rows grid:
@@ -210,7 +230,7 @@ class Trainer(object):
             # row #2: predicted_output (y_pred)
             # row #3: target (y_true)
 
-            #get the y_pred from c = 1 to c = 3
+            # get the y_pred from c = 1 to c = 3
             y_pred = y_pred.expand(-1, 3, -1, -1).to(self.cnf.device)
             y_true = y_true.expand(-1, 3, -1, -1).to(self.cnf.device)
             grid = torch.cat([x, y_pred, y_true], dim=0)
@@ -223,7 +243,7 @@ class Trainer(object):
                 img_tensor=grid, global_step=self.epoch
             )
 
-        val_losses = torch.cat(val_losses) # concatenate all the IoU values
+        val_losses = torch.cat(val_losses)  # concatenate all the IoU values
         # save best model
         # mean_val_loss = np.mean(val_losses)
         mean_val_loss = val_losses.mean().item()
@@ -237,9 +257,11 @@ class Trainer(object):
             self.patience = self.patience - 1
 
         # log val results
-        print(f'\t● AVG Loss on VAL-set: {mean_val_loss:.6f}'
-              f' │ patience: {self.patience}'
-              f' │ T: {time() - t:.2f} s')
+        print(
+            f'\t● AVG Loss on VAL-set: {mean_val_loss:.6f}'
+            f' │ patience: {self.patience}'
+            f' │ T: {time() - t:.2f} s'
+            )
 
         # log val loss / val metric
         self.sw.add_scalar(
@@ -273,4 +295,3 @@ class Trainer(object):
 
             self.epoch += 1
             self.save_ck()
-
