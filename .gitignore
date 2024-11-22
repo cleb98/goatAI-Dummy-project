@@ -15,7 +15,7 @@ venv/
 *.pth
 
 # Logs
-logs/
+log/
 *.log
 
 # Jupyter Notebook checkpoints
