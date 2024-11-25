@@ -1,13 +1,18 @@
 import random
 import socket
-from typing import Any
-from typing import Dict
-from typing import Optional
-
+import os
+import requests
+import zipfile
 import numpy as np
 import torch
 import yaml
 from path import Path
+
+from typing import Any
+from typing import Dict
+from typing import Optional
+
+
 
 ''' Summary
 - **`random`, `numpy`, and `torch`**: These libraries are used to set random seeds across different modules, which is crucial for reproducibility.
@@ -23,6 +28,24 @@ The script is particularly useful for managing experiments in machine learning. 
 
 This kind of utility is commonly used in research settings and startups to streamline the process of setting up and running different configurations, ensuring experiments are reproducible and traceable across different systems.
 '''
+
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
+
+def save_response_content(response, destination):
+    CHUNK_SIZE = 32768
+    with open(destination, 'wb') as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk:
+                f.write(chunk)
+
+
+
 
 def set_seed(seed=None):
     # type: (Optional[int]) -> int
@@ -121,9 +144,52 @@ class Conf(object):
         self.ds_root = self.ds_root.replace(
             '$PROJECT_DIR', self.project_root
         )
+
+
         self.ds_root = Path(self.ds_root)
         assert self.ds_root.exists(), \
             f'directory `DS_ROOT={self.ds_root}` does not exist'
+
+        #to fix the download feature
+        # self.url = y.get('DS_URL', None)  # type: str
+        # if not self.ds_root.exists():
+        #     print( f'directory `DS_ROOT={self.ds_root}` does not exist')
+        #     Path(self.ds_root).makedirs()
+        #     self.dataset_download()
+        #     print(f'dataset downloaded to {self.ds_root}')
+
+    # def dataset_download(self):
+    #     # Assicurati che la cartella di destinazione esista
+    #     dest_folder = self.ds_root
+    #     os.makedirs(dest_folder, exist_ok=True)
+    #
+    #     # Estrai l'ID del file dall'URL di Google Drive
+    #     file_id = self.url.split('/d/')[1].split('/')[0]
+    #     session = requests.Session()
+    #     download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    #
+    #     # Invia una richiesta iniziale per ottenere il token di conferma
+    #     response = session.get(download_url, params={'id': file_id}, stream=True)
+    #     token = get_confirm_token(response)
+    #
+    #     if token:
+    #         params = {'id': file_id, 'confirm': token}
+    #         response = session.get(download_url, params=params, stream=True)
+    #
+    #     # Definisci il percorso per il file ZIP scaricato
+    #     zip_path = os.path.join(dest_folder, 'downloaded.zip')
+    #
+    #     # Scarica il file ZIP
+    #     save_response_content(response, zip_path)
+    #
+    #     # Estrai il contenuto del file ZIP
+    #     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    #         zip_ref.extractall(dest_folder)
+    #
+    #     # Elimina il file ZIP
+    #     os.remove(zip_path)
+
+
 
 
     def __str__(self):

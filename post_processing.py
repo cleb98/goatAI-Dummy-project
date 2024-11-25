@@ -3,8 +3,16 @@ import numpy as np
 import torch
 
 
-class PostProcessor(object):
+def binarized(y_pred):
+    # type: (torch.Tensor) -> torch.Tensor
+    """
+    Apply post-processing in validation phase to predicted tensor, in order to obtain a binary mask.
+    :param y_pred:
+    :return: y_pred in binary format
+    """
+    return torch.where(y_pred > 0.5, 1, 0)
 
+class PostProcessor(object):
     def __init__(self, out_ch_order='RGB'):
         # type: (str) -> None
         """
@@ -16,17 +24,6 @@ class PostProcessor(object):
             f'`out_ch_order` must be "RGB" or "BGR", not {out_ch_order}'
 
         self.out_ch_order = out_ch_order
-
-    def binary(self, y_pred):
-        # type: (torch.Tensor) -> torch.Tensor
-        """
-        Apply post-processing in validation phase to predicted tensor, in order to obtain a binary mask.
-        :param y_pred:
-        :return: y_pred in binary format
-        """
-        y_pred = np.where(y_pred > 0.5, 1, 0)
-        y_pred = np.clip(y_pred, 0, 1)
-        return torch.from_numpy(y_pred)
 
 
 
@@ -41,7 +38,7 @@ class PostProcessor(object):
         """
 
         # (1) torch tensor to numpy image array
-        y_pred = y_pred.detach().cpu().numpy().squeeze()
+        y_pred = y_pred.detach().cpu().numpy().squeeze(0)
         y_pred = np.clip(y_pred, 0, 1)
         img_pred = (255 * y_pred.transpose((1, 2, 0))).astype(np.uint8)
 

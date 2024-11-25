@@ -15,11 +15,6 @@ def demo(img_path, exp_name):
     :param img_path: path of the image you want to test
     :param exp_name: name of the experiment you want to test
     """
-    try:
-        cv2.imshow('input', cv2.imread(img_path))
-        cv2.waitKey(0)
-    except Exception as e:
-        print(f'Error trying to show input image: {e}')
 
     cnf = Conf(exp_name=exp_name)
 
@@ -42,14 +37,22 @@ def demo(img_path, exp_name):
     y_pred = model.forward(x)
     img_pred = post_proc.apply(y_pred)
 
-    # show input and output
-    cv2.imshow('input', img[..., ::-1])
-    cv2.imshow('output', img_pred[..., ::-1])
-    cv2.waitKey(0)
+    # # show input and output
+    # cv2.imshow('input', img[..., ::-1])
+    # cv2.imshow('output', img_pred[..., ::-1])
+    # cv2.waitKey(0)
+
+    # save output
+    cv2.imwrite(str(cnf.exp_log_path / 'input.png'), img[..., ::-1])
+    cv2.imwrite(str(cnf.exp_log_path / 'output.png'), img_pred[..., ::-1])
+# to download from server use:
+# go to you local folder where you want to download the files using the terminal and type:
+# $ scp cbellucci@ailb-login-03.ing.unimore.it:/homes/cbellucci/segmentation/log/default/*.png "C:/Users/cribe/OneDrive/Desktop/GoatAI/log/default"
+
 
 
 if __name__ == '__main__':
-    __p = Path(__file__).parent / 'dataset' / 'samples' / 'val' / '20_x.png'
+    __p = Path(__file__).parent / 'dataset' / 'samples_seg' / 'val' / '20_x.png'
     try:
         demo(img_path=__p, exp_name='default')
     except Exception as e:

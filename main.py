@@ -1,22 +1,12 @@
 import click
 import torch.backends.cudnn as cudnn
-import urllib.request
-import zipfile
-import os
+
 
 from conf import Conf
 from trainer import Trainer
 from path import Path
 
-def dataset_download():
-    url = 'https://drive.google.com/file/d/1dVKbd_G039Ai6VG7HHc640IRDKTKWouT/view?usp=sharing'
-    #dowload from google drive a zip file from the url
-    urllib.request.urlretrieve(url, 'sample.zip')
-    #unzip the file to the folder ./dataset/samples
-    with zipfile.ZipFile('sample.zip', 'r') as zip_ref:
-        zip_ref.extractall('dataset/samples')
-    #remove the zip file
-    os.remove('sample.zip')
+
 
 # --- enable cuDNN benchmark:
 # cuDNN benchmarks multiple convolution algorithms and select the fastest.
@@ -33,14 +23,6 @@ cudnn.benchmark = True
 @click.option('--seed', type=int, default=None)
 def main(exp_name, conf_file_path, seed):
     # type: (str, str, int) -> None
-
-    #create folder ./dataset/samples if it does not exist
-    if not Path('dataset/samples').exists():
-        print('dataset not found, downloading...')
-        Path('dataset/samples').makedirs()
-        dataset_download()
-        print('dataset downloaded successfully! in repository ./dataset/samples')
-
     # if `exp_name` is None,
     # ask the user to enter it
     if exp_name is None:
@@ -72,6 +54,17 @@ def main(exp_name, conf_file_path, seed):
     trainer = Trainer(cnf=cnf)
     trainer.run()
 
-
+'''
+srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gpu:1 --pty bash
+'''
 if __name__ == '__main__':
     main()
+
+# pazienza
+# iou $
+# metodi o funzioni? $
+# path vs pathlib $
+# dataset download: no hardcoded paths
+# binary function $
+# demo?
+# pep8

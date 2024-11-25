@@ -5,10 +5,11 @@ MAX_PATIENCE: 64
 
 # model parameters
 
-DEVICE: cpu
+DEVICE: cuda
 
 
 # dataset/dataloader parameters
 N_WORKERS: 4
 BATCH_SIZE: 8
 DS_ROOT: '$PROJECT_DIR/dataset/samples_seg'
+#DS_URL: 'https://drive.google.com/file/d/11wCoSgY-QvJw147HieBv7E4sIEaLNEoW/view?usp=drive_linkì'
