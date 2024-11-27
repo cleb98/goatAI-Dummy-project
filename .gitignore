@@ -22,7 +22,7 @@ venv/
 .idea/
 
 # Logs
-logs/
+log/
 *.log
 
 # Jupyter Notebook checkpoints
@@ -36,4 +36,9 @@ Thumbs.db
 *.jpg
 *.png
 *.jpeg
+
+#raw data
+*.csv
+*.json
+
 

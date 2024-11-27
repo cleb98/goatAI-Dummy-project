@@ -63,12 +63,16 @@ class DummyDS(Dataset):
         x_path, y_path = self.paths[i]
 
         # read input and target (RGB order)
+
         x_img = cv2.cvtColor(cv2.imread(x_path), cv2.COLOR_BGR2RGB)
         y_img = cv2.cvtColor(cv2.imread(y_path), cv2.COLOR_BGR2GRAY)
 
         # apply pre processing to input and target
         x = self.pre_proc.apply(x_img)
         y = self.pre_proc.apply(y_img)
+
+        # binarize target necessary for BCE loss used in training
+        y = torch.where(y > 0.5, 1.0, 0.0)
 
         return x, y
 

@@ -1,7 +1,7 @@
 import cv2
 
 
-image_path = 'samples/train/0_x.png'
+image_path = '../samples/train/0_x.png'
 image = cv2.imread(image_path)
 
 # Callback per ottenere il colore cliccato
@@ -11,7 +11,7 @@ def get_color(event, x, y, flags, param):
         b, g, r = image[y, x]
         print(f'BGR Color: ({b}, {g}, {r})')
         # Salva il colore per l'uso futuro
-        with open("target_color.txt", "w") as f:
+        with open("../target_color.txt", "w") as f:
             f.write(f"{b},{g},{r}")
         cv2.destroyAllWindows()
 

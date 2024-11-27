@@ -13,7 +13,7 @@ class BinaryMaskGenerator:
         self.dest_folder.mkdir(parents=True, exist_ok=True)
 
         # Legge il colore target dal file salvato
-        with open("target_color.txt", "r") as f:
+        with open("../target_color.txt", "r") as f:
             b, g, r = map(int, f.read().split(","))
             self.target_color = np.array([b, g, r], dtype=np.uint8)
 

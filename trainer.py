@@ -10,8 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from conf import Conf
 from dataset.dummy_ds import DummyDS
-from models import DummyModel
-from post_processing import PostProcessor
+from models import UNet
+from post_processing import binarized
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
 
@@ -30,7 +30,7 @@ def get_batch_iou(masks_pred, masks_true):
     """
     inters = torch.logical_and(masks_pred, masks_true).sum((1, 2, 3))
     union = torch.logical_or(masks_pred, masks_true).sum((1, 2, 3))
-    return torch.where(union != 0, inters / union, union)
+    return torch.where(union != 0, inters / union, 0)
 
 
 class Trainer(object):
@@ -45,7 +45,8 @@ class Trainer(object):
         self.cnf = cnf
 
         # init model
-        self.model = DummyModel()
+        # self.model = DummyModel()
+        self.model = UNet(input_channels=3)
         self.model = self.model.to(cnf.device)
 
         # init optimizer
@@ -69,7 +70,7 @@ class Trainer(object):
             worker_init_fn=val_set.wif_val,
         )
 
-        self.post_proc = PostProcessor(out_ch_order='RGB')
+        # self.post_proc = PostProcessor(out_ch_order='RGB')
 
         # init learning rate scheduler
         self.scheduler = LRScheduler(
@@ -87,7 +88,7 @@ class Trainer(object):
 
         # starting values
         self.epoch = 0
-        self.best_val_loss = None
+        self.best_val_iou = None
         self.patience = self.cnf.max_patience
 
         # init progress bar
@@ -114,7 +115,7 @@ class Trainer(object):
             self.optimizer.load_state_dict(ck['optimizer'])
             self.scheduler.load_state_dict(ck['scheduler'])
             self.scheduler.optimizer = self.optimizer
-            self.best_val_loss = ck['best_val_loss']
+            self.best_val_iou = ck['best_val_iou']
             self.patience = ck['patience']
 
 
@@ -127,7 +128,7 @@ class Trainer(object):
             'model': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.scheduler.state_dict(),
-            'best_val_loss': self.best_val_loss,
+            'best_val_iou': self.best_val_iou,
             'patience': self.patience,
         }
         torch.save(ck, self.log_path / 'training.ck')
@@ -151,6 +152,7 @@ class Trainer(object):
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
 
             y_pred = self.model.forward(x)
+
             # loss = nn.MSELoss()(y_pred, y_true)
             loss = nn.BCELoss()(y_pred, y_true)
             loss.backward()
@@ -184,27 +186,6 @@ class Trainer(object):
         print(f' │ T: {time() - start_time:.2f} s')
 
 
-    def IoU(self, mask1, mask2):
-        """
-        Compute the Intersection over Union (IoU) between two masks.
-
-        :param mask1: numpy array of shape (B, H, W, C)
-        :param mask2: numpy array of shape (B, H, W, C)
-
-        :return: intersection / union: numpy array of shape (B,) with IoU values for each couple of masks in the batch
-        """
-        mask1 = mask1.cpu()
-        mask2 = mask2.cpu()
-        # print(mask1.shape, mask2.shape)
-        intersection = np.logical_and(mask1, mask2).sum(axis=(1, 2, 3))
-        area1 = mask1.sum(axis=(1, 2, 3))
-        area2 = mask2.sum(axis=(1, 2, 3))
-        union = area1 + area2 - intersection
-        union = np.where(union <= 0, 1e-5, union)
-
-        return intersection / union
-
-
     def validate(self):
         """
         Test model on the validation set.
@@ -212,18 +193,22 @@ class Trainer(object):
         self.model.eval()
 
         t = time()
-        val_losses = []
+        val_iou = []
+        val_acc = []
         for step, sample in enumerate(self.val_loader):
             x, y_true = sample
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
             y_pred = self.model.forward(x)
-            y_pred = self.post_proc.binary(y_pred)
+            y_bin = binarized(y_pred)
 
             # loss = nn.MSELoss()(y_pred, y_true)
-            # val_losses.append(loss.item())
+            # val_iou.append(loss.item())
 
-            iou = self.IoU(y_pred, y_true)  # size = (B,)
-            val_losses.append(iou)
+            iou = get_batch_iou(y_bin, y_true) # size = (B,)
+            acc = torch.where(iou > 0.65, 1, 0)
+            #accumulates the iou and accuracy for each batch in the validation set
+            val_iou.append(iou)
+            val_acc.append(acc)
 
             # draw results for this step in a 3 rows grid:
             # row #1: input (x)
@@ -243,14 +228,17 @@ class Trainer(object):
                 img_tensor=grid, global_step=self.epoch
             )
 
-        val_losses = torch.cat(val_losses)  # concatenate all the IoU values
+        val_iou = torch.cat(val_iou)  # concatenate all the IoU values
+        val_acc = torch.cat(val_acc)
+        val_acc = val_acc.to(torch.float32)
         # save best model
-        # mean_val_loss = np.mean(val_losses)
-        mean_val_loss = val_losses.mean().item()
+        #mean_val_loss1 = np.mean(val_iou)
+        mean_iou = val_iou.mean().item()
+        mean_acc = val_acc.mean().item()
 
-        first_time = self.best_val_loss is None
-        if first_time or (mean_val_loss < self.best_val_loss):
-            self.best_val_loss = mean_val_loss
+        first_time = self.best_val_iou is None
+        if first_time or (mean_iou > self.best_val_iou):
+            self.best_val_iou = mean_iou
             self.patience = self.cnf.max_patience
             self.model.save_w(self.log_path / 'best.pth', cnf=self.cnf.dict)
         else:
@@ -258,14 +246,20 @@ class Trainer(object):
 
         # log val results
         print(
-            f'\t● AVG Loss on VAL-set: {mean_val_loss:.6f}'
+            f'\t● AVG IoU on VAL-set: {mean_iou:.6f}'
+            f' │ AVG Accuracy on VAL-set: {mean_acc:.6f}'
             f' │ patience: {self.patience}'
             f' │ T: {time() - t:.2f} s'
             )
 
         # log val loss / val metric
         self.sw.add_scalar(
-            'val_loss', scalar_value=mean_val_loss,
+            'iou', scalar_value=mean_iou,
+            global_step=self.epoch
+        )
+
+        self.sw.add_scalar(
+            'accuracy', scalar_value=mean_acc,
             global_step=self.epoch
         )
 
