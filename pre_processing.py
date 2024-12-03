@@ -18,6 +18,7 @@ class PreProcessor(object):
         self.device = device
         self.resize = transforms.Resize((224, 224))
 
+
     def apply(self, img):
         # type: (np.ndarray) -> torch.Tensor
         """

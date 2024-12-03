@@ -9,8 +9,9 @@ from path import Path
 from torch.utils.data import Dataset
 
 from conf import Conf
-from pre_processing import PreProcessor
 
+from pre_processing import PreProcessor
+from data_augmentation import DataAugmentation
 
 class DummyDS(Dataset):
     """
@@ -33,6 +34,7 @@ class DummyDS(Dataset):
         self.cnf = cnf
         self.mode = mode
 
+
         ds_dir = self.cnf.ds_root / mode
 
         self.paths = []
@@ -41,17 +43,18 @@ class DummyDS(Dataset):
             self.paths.append((x_path, y_path))
 
         self.pre_proc = PreProcessor(unsqueeze=False, device='cpu')
-
+        self.aug_data = DataAugmentation()
 
     def __len__(self):
+        # type: () -> int
         """
         :return: number of samples in the dataset
         """
-        # type: () -> int
         return len(self.paths)
 
 
     def __getitem__(self, i):
+        # type: (int) -> Tuple[torch.Tensor, torch.Tensor]
         """
         - reads the i-th sample from the dataset and applies pre-processing
         :param i: index of the sample you want to retrieve
@@ -59,7 +62,6 @@ class DummyDS(Dataset):
             ->> x: input RGB image
             ->> y: target RGB image
         """
-        # type: (int) -> Tuple[torch.Tensor, torch.Tensor]
         x_path, y_path = self.paths[i]
 
         # read input and target (RGB order)
@@ -70,6 +72,10 @@ class DummyDS(Dataset):
         # apply pre processing to input and target
         x = self.pre_proc.apply(x_img)
         y = self.pre_proc.apply(y_img)
+
+        #data augmentation
+        if self.mode == 'train':
+            x, y = self.aug_data.random_flip(x, y)
 
         # binarize target necessary for BCE loss used in training
         y = torch.where(y > 0.5, 1.0, 0.0)
@@ -109,7 +115,7 @@ class DummyDS(Dataset):
 
 
 def main():
-    ds = DummyDS(cnf=Conf(exp_name='default'), mode='val')
+    ds = DummyDS(cnf=Conf(exp_name='default'), mode='train')
 
     for i in range(len(ds)):
         x, y = ds[i]

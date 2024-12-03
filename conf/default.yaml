@@ -5,7 +5,7 @@ MAX_PATIENCE: 70
 
 # model parameters
 
-DEVICE: cuda
+DEVICE: 'cpu'
 
 
 # dataset/dataloader parameters
