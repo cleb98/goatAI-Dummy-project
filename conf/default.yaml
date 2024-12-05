@@ -5,7 +5,7 @@ MAX_PATIENCE: 70
 
 # model parameters
 
-DEVICE: 'cpu'
+DEVICE: 'gpu'
 
 
 # dataset/dataloader parameters
