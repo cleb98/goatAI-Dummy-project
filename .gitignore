@@ -37,3 +37,13 @@ Thumbs.db
 *.png
 *.jpeg
 
+#raw data
+*.csv
+*.json
+
+#compressed files
+*.zip
+*.tar
+*.tar.gz
+*.gz
+
