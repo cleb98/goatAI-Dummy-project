@@ -41,12 +41,11 @@ Thumbs.db
 *.csv
 *.json
 
-<<<<<<< HEAD
 #compressed files
 *.zip
 *.tar
 *.tar.gz
 *.gz
-=======
->>>>>>> 576cf278fad1fd01fe5cb2347b41f67d43ed5034
+
+
 
