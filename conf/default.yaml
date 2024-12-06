@@ -1,15 +1,16 @@
 # training parameters
-LR: 0.00015
-EPOCHS: 64
-MAX_PATIENCE: 64
+LR: 0.0006
+EPOCHS: 100
+MAX_PATIENCE: 70
 
 # model parameters
 
-DEVICE: cuda
+DEVICE: 'gpu'
 
 
 # dataset/dataloader parameters
 N_WORKERS: 4
-BATCH_SIZE: 8
-DS_ROOT: '$PROJECT_DIR/dataset/samples_seg'
+BATCH_SIZE: 16
+DS_ROOT: '$PROJECT_DIR/dataset/kwasir-seg'
+#DS_ROOT: '$PROJECT_DIR/dataset/samples_seg'
 #DS_URL: 'https://drive.google.com/file/d/11wCoSgY-QvJw147HieBv7E4sIEaLNEoW/view?usp=drive_linkì'

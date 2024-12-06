@@ -189,9 +189,6 @@ class Conf(object):
     #     # Elimina il file ZIP
     #     os.remove(zip_path)
 
-
-
-
     def __str__(self):
         # type: () -> str
         """

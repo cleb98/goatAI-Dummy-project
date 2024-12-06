@@ -86,12 +86,21 @@ class BaseModel(nn.Module, metaclass=ABCMeta):
 
         :param path: path of the weights file to be loaded.
         """
-        d = torch.load(path, weights_only=False)
+        d = torch.load(path, map_location=torch.device(self.device), weights_only=False)
         self.load_state_dict(d['state_dict'])
         self.cnf_dict = d['cnf']
         if d['cnf'] is not None:
             device = d['cnf'].get('device', self.device)
-            self.to(device)
+            '''
+            il device di cnf è sempre cuda, 
+            ma io voglio potrlo eseguire in locale
+            aggiungo il seguente controllo
+            '''
+            if device != self.device:
+                d['cnf']['device'] = self.device
+                self.to(self.device)
+            else:
+                self.to(device)
 
 
     def requires_grad(self, flag):

@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from conf import Conf
 from dataset.dummy_ds import DummyDS
-from models import DummyModel
+from models import UNet
 from post_processing import binarized
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
@@ -45,7 +45,8 @@ class Trainer(object):
         self.cnf = cnf
 
         # init model
-        self.model = DummyModel()
+        # self.model = DummyModel()
+        self.model = UNet(input_channels=3)
         self.model = self.model.to(cnf.device)
 
         # init optimizer
@@ -151,6 +152,7 @@ class Trainer(object):
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
 
             y_pred = self.model.forward(x)
+
             # loss = nn.MSELoss()(y_pred, y_true)
             loss = nn.BCELoss()(y_pred, y_true)
             loss.backward()
@@ -192,17 +194,21 @@ class Trainer(object):
 
         t = time()
         val_iou = []
+        val_acc = []
         for step, sample in enumerate(self.val_loader):
             x, y_true = sample
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
             y_pred = self.model.forward(x)
-            y_pred = binarized(y_pred)
+            y_bin = binarized(y_pred)
 
             # loss = nn.MSELoss()(y_pred, y_true)
             # val_iou.append(loss.item())
 
-            iou = get_batch_iou(y_pred, y_true) # size = (B,)
+            iou = get_batch_iou(y_bin, y_true) # size = (B,)
+            acc = torch.where(iou > 0.65, 1, 0)
+            #accumulates the iou and accuracy for each batch in the validation set
             val_iou.append(iou)
+            val_acc.append(acc)
 
             # draw results for this step in a 3 rows grid:
             # row #1: input (x)
@@ -223,9 +229,12 @@ class Trainer(object):
             )
 
         val_iou = torch.cat(val_iou)  # concatenate all the IoU values
+        val_acc = torch.cat(val_acc)
+        val_acc = val_acc.to(torch.float32)
         # save best model
         #mean_val_loss1 = np.mean(val_iou)
         mean_iou = val_iou.mean().item()
+        mean_acc = val_acc.mean().item()
 
         first_time = self.best_val_iou is None
         if first_time or (mean_iou > self.best_val_iou):
@@ -237,7 +246,8 @@ class Trainer(object):
 
         # log val results
         print(
-            f'\t● AVG Loss on VAL-set: {mean_iou:.6f}'
+            f'\t● AVG IoU on VAL-set: {mean_iou:.6f}'
+            f' │ AVG Accuracy on VAL-set: {mean_acc:.6f}'
             f' │ patience: {self.patience}'
             f' │ T: {time() - t:.2f} s'
             )
@@ -245,6 +255,11 @@ class Trainer(object):
         # log val loss / val metric
         self.sw.add_scalar(
             'iou', scalar_value=mean_iou,
+            global_step=self.epoch
+        )
+
+        self.sw.add_scalar(
+            'accuracy', scalar_value=mean_acc,
             global_step=self.epoch
         )
 

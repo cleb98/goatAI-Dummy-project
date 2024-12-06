@@ -16,6 +16,7 @@ class PreProcessor(object):
         self.unsqueeze = unsqueeze
         self.to_tensor = transforms.ToTensor()
         self.device = device
+        self.resize = transforms.Resize((224, 224))
 
 
     def apply(self, img):
@@ -30,9 +31,11 @@ class PreProcessor(object):
 
         # (1) numpy array to torch tensor
         x = self.to_tensor(img)
-
+        # (1.1) resize
+        x = self.resize(x)
         # (2) move to device
         x = x.to(self.device)
+
 
         # (3) unsqueeze (if needed)
         if self.unsqueeze:

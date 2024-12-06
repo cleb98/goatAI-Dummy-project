@@ -4,7 +4,7 @@ import torch.backends.cudnn as cudnn
 
 from conf import Conf
 from trainer import Trainer
-from path import Path
+
 
 
 
@@ -26,7 +26,8 @@ def main(exp_name, conf_file_path, seed):
     # if `exp_name` is None,
     # ask the user to enter it
     if exp_name is None:
-        exp_name = click.prompt('▶ experiment name', default='default')
+        # exp_name = click.prompt('▶ experiment name', default='default')
+        exp_name = 'default'
 
     # if `exp_name` contains '!',
     # `log_each_step` becomes `False`
@@ -60,11 +61,4 @@ srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gp
 if __name__ == '__main__':
     main()
 
-# pazienza
-# iou $
-# metodi o funzioni? $
-# path vs pathlib $
-# dataset download: no hardcoded paths
-# binary function $
-# demo?
-# pep8
+
