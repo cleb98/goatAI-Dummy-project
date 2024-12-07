@@ -64,7 +64,7 @@ class PostProcessor(object):
         if self.out_ch_order == 'BGR':
             img_pred = cv2.cvtColor(img_pred, cv2.COLOR_RGB2BGR)
 
-        closing, opening = morphological_operations(img_pred)
+        # closing, opening = morphological_operations(img_pred)
 
         #save images to visualize the results
         #(i dont use imshow because i'm on a server)

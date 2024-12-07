@@ -145,49 +145,26 @@ class Conf(object):
             '$PROJECT_DIR', self.project_root
         )
 
-
         self.ds_root = Path(self.ds_root)
         assert self.ds_root.exists(), \
             f'directory `DS_ROOT={self.ds_root}` does not exist'
 
-        #to fix the download feature
-        # self.url = y.get('DS_URL', None)  # type: str
-        # if not self.ds_root.exists():
-        #     print( f'directory `DS_ROOT={self.ds_root}` does not exist')
-        #     Path(self.ds_root).makedirs()
-        #     self.dataset_download()
-        #     print(f'dataset downloaded to {self.ds_root}')
+        self.train_ann = Path(y.get('TRAIN_ANNOTATION', None)) # type: str
+        assert self.train_ann.exists(), \
+            f'directory `TRAIN_ANN={self.train_ann}` does not exist'
 
-    # def dataset_download(self):
-    #     # Assicurati che la cartella di destinazione esista
-    #     dest_folder = self.ds_root
-    #     os.makedirs(dest_folder, exist_ok=True)
-    #
-    #     # Estrai l'ID del file dall'URL di Google Drive
-    #     file_id = self.url.split('/d/')[1].split('/')[0]
-    #     session = requests.Session()
-    #     download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    #
-    #     # Invia una richiesta iniziale per ottenere il token di conferma
-    #     response = session.get(download_url, params={'id': file_id}, stream=True)
-    #     token = get_confirm_token(response)
-    #
-    #     if token:
-    #         params = {'id': file_id, 'confirm': token}
-    #         response = session.get(download_url, params=params, stream=True)
-    #
-    #     # Definisci il percorso per il file ZIP scaricato
-    #     zip_path = os.path.join(dest_folder, 'downloaded.zip')
-    #
-    #     # Scarica il file ZIP
-    #     save_response_content(response, zip_path)
-    #
-    #     # Estrai il contenuto del file ZIP
-    #     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    #         zip_ref.extractall(dest_folder)
-    #
-    #     # Elimina il file ZIP
-    #     os.remove(zip_path)
+        self.val_ann = Path(y.get('VAL_ANNOTATION', None)) # type: str
+        assert self.val_ann.exists(), \
+            f'directory `VAL_ANN={self.val_ann}` does not exist'
+
+        self.train_mask = Path(y.get('TRAIN_MASK', None)) # type: str
+        assert self.train_mask.exists(), \
+            f'directory `TRAIN_MASK={self.train_mask}` does not exist'
+
+        self.val_mask = Path(y.get('VAL_MASK', None)) # type: str
+        assert self.val_mask.exists(), \
+            f'directory `VAL_MASK={self.val_mask}` does not exist'
+
 
     def __str__(self):
         # type: () -> str

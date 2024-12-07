@@ -9,12 +9,28 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from conf import Conf
-from dataset.dummy_ds import DummyDS
+# from dataset.dummy_ds import DummyDS
+from dataset.coco_ds import CocoDS
 from models import UNet
 from post_processing import binarized
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
 
+
+def decode_mask(img):
+    #type: (torch.Tensor) -> torch.Tensor
+    '''
+    Decodes the image with n channels to a single channel grayscale mask
+    :param img: tensor with n channels
+    :return: img_decoded: single channel mask torch tensor in uint8
+    '''
+    background_mask = torch.all(img == 0, dim=1) #shape = (B,1,H,W)
+    back = torch.zeros_like(img, dtype=torch.int8).sum(dim=1) #shape = (B,1,H,W)
+    back[background_mask] = -1 #background pixels mapped to -1
+    img = img.argmax(dim=1) + back #pixels ==0 are now class 0 (not background) and pixels == -1 are background
+    img = (img + 1) * 255 / 10 #background is set from -1 to 0 and class i is set to
+    #add channel dim (B, 1, H, W) with values in range [0, 255]
+    return img.unsqueeze(1).to(torch.uint8)
 
 def get_batch_iou(masks_pred, masks_true):
     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
@@ -28,10 +44,25 @@ def get_batch_iou(masks_pred, masks_true):
     :return: IoU value for each element in the batch
         ->> shape: (B,); values: range[0, 1]
     """
-    inters = torch.logical_and(masks_pred, masks_true).sum((1, 2, 3))
+    inters = torch.logical_and(masks_pred, masks_true).sum((2, 3))
     union = torch.logical_or(masks_pred, masks_true).sum((1, 2, 3))
     return torch.where(union != 0, inters / union, 0)
 
+def get_batch_iou_for_classes(masks_pred, masks_true):
+    # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
+    """
+    Compute the intersection over union between two batches of binary masks.
+
+    :param masks_pred: predicted binary masks
+        ->> shape: (B, C, H, W); values: bin{0, 1}
+    :param masks_true: target binary masks
+        ->> shape: (B, C, H, W); values: bin{0, 1}
+    :return: IoU value for each element in the batch
+        ->> shape: (B,C); values: range[0, 1]
+    """
+    inters = torch.logical_and(masks_pred, masks_true).sum((2, 3))
+    union = torch.logical_or(masks_pred, masks_true).sum((2, 3))
+    return torch.where(union != 0, inters / union, 0)
 
 class Trainer(object):
 
@@ -46,7 +77,7 @@ class Trainer(object):
 
         # init model
         # self.model = DummyModel()
-        self.model = UNet(input_channels=3)
+        self.model = UNet(input_channels=3, output_channels=10)
         self.model = self.model.to(cnf.device)
 
         # init optimizer
@@ -55,7 +86,7 @@ class Trainer(object):
         )
 
         # init train loader
-        training_set = DummyDS(cnf, mode='train')
+        training_set = CocoDS(cnf, mode='train')
         self.train_loader = DataLoader(
             dataset=training_set, batch_size=cnf.batch_size,
             num_workers=cnf.n_workers, shuffle=True, pin_memory=True,
@@ -63,7 +94,7 @@ class Trainer(object):
         )
 
         # init val loader
-        val_set = DummyDS(cnf, mode='val')
+        val_set = CocoDS(cnf, mode='val')
         self.val_loader = DataLoader(
             dataset=val_set, batch_size=cnf.batch_size,
             num_workers=1, shuffle=False, pin_memory=True,
@@ -154,7 +185,9 @@ class Trainer(object):
             y_pred = self.model.forward(x)
 
             # loss = nn.MSELoss()(y_pred, y_true)
-            loss = nn.BCELoss()(y_pred, y_true)
+            # loss = nn.BCELoss()(y_pred, y_true)
+            #entra y_true fra 0 e 1 e y_pred?
+            loss = nn.CrossEntropyLoss()(y_pred, y_true)
             loss.backward()
             train_losses.append(loss.item())
 
@@ -195,17 +228,14 @@ class Trainer(object):
         t = time()
         val_iou = []
         val_acc = []
+
         for step, sample in enumerate(self.val_loader):
             x, y_true = sample
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
             y_pred = self.model.forward(x)
             y_bin = binarized(y_pred)
-
-            # loss = nn.MSELoss()(y_pred, y_true)
-            # val_iou.append(loss.item())
-
-            iou = get_batch_iou(y_bin, y_true) # size = (B,)
-            acc = torch.where(iou > 0.65, 1, 0)
+            iou = get_batch_iou_for_classes(y_bin, y_true) # size = (B,C)
+            acc = torch.where(iou > 0.5, 1, 0)
             #accumulates the iou and accuracy for each batch in the validation set
             val_iou.append(iou)
             val_acc.append(acc)
@@ -214,8 +244,12 @@ class Trainer(object):
             # row #1: input (x)
             # row #2: predicted_output (y_pred)
             # row #3: target (y_true)
-
-            # get the y_pred from c = 1 to c = 3
+            #reshaping tensors for visualization purposes
+            # decoding mask and target mask from c = 10 to c= 1
+            y_pred = decode_mask(y_pred)
+            y_true = decode_mask(y_true)
+            # y_true = y_true.sum(dim=1, keepdim=True)
+            # from c = 1 to c = 3 for visualization purposes
             y_pred = y_pred.expand(-1, 3, -1, -1).to(self.cnf.device)
             y_true = y_true.expand(-1, 3, -1, -1).to(self.cnf.device)
             grid = torch.cat([x, y_pred, y_true], dim=0)
@@ -230,7 +264,7 @@ class Trainer(object):
 
         val_iou = torch.cat(val_iou)  # concatenate all the IoU values
         val_acc = torch.cat(val_acc)
-        val_acc = val_acc.to(torch.float32)
+        val_acc = val_acc.to(torch.float32) #non sicuro che serva val acc è gia un tensore!(rivedere perchè è qua)
         # save best model
         #mean_val_loss1 = np.mean(val_iou)
         mean_iou = val_iou.mean().item()

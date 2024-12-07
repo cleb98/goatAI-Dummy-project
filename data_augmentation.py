@@ -10,11 +10,13 @@ class DataAugmentation:
         self.vflip = F.vflip
 
     def random_flip(self, x, y, p=0.5):
-        # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
+        # type: (torch.Tensor, torch.Tensor) -> torch.Tensor # return 2 torch.Tensor -> x, y
         """
         :param x: input tensor with shape (B,C,H,W)
         :param y: target tensor with shape (B,C,H,W)
-        :return: augmented input and target tensors with probability p of being flipped
+        :return x_flipped, y_flipped: flipped input and target
+         tensors with probability p of being flipped
+          horizontally or vertically
         """
         if random.random() < p:
             x = self.hflip(x)

@@ -103,7 +103,7 @@ class UNet(BaseModel):
     UNet model for segmentation of images with output_channels classes
     """
 
-    def __init__(self, input_channels = 3, output_channels= 1):
+    def __init__(self, input_channels = 3, output_channels= 10):
         # type: (int, int) -> None
 
         super(UNet, self).__init__()
@@ -111,6 +111,7 @@ class UNet(BaseModel):
         self.input_channels = input_channels
         print('input channels: ', self.input_channels)
         self.output_channels = output_channels
+        print('output channels: ', self.output_channels)
 
         # downsampling
         self.down_conv1 = Down(in_channels=self.input_channels, out_channels=64)
@@ -147,8 +148,8 @@ class UNet(BaseModel):
         x = self.up_conv2(x, skip_3)
         x = self.up_conv3(x, skip_2)
         x = self.up_conv4(x, skip_1)
-        x = self.up_conv5(x) #fROM FINAL CONV THE RECONSTUCTED IMAGES IS OBTAINED (0, 255) USING FOR EX THE MSE LOSS
-        x = torch.sigmoid(x) #APPLY SIGMOID TO OBTAIN THE PROBABILITY TO USE WITH BCE LOSS
+        x = self.up_conv5(x) #fROM FINAL CONV THE RECONSTUCTED IMAGES IS OBTAINED (0, 255) , LOGIT USED TO FEED CROSS ENTROPY LOSS
+        # x = torch.sigmoid(x) #APPLY SIGMOID TO OBTAIN THE PROBABILITY TO USE WITH BCE LOSS
 
         return x
 
@@ -157,10 +158,10 @@ def test():
 
     batch_size = 1
     input_channels = 3
-    input_size_h = 224
-    input_size_w = 224
+    input_size_h = 256
+    input_size_w = 256
 
-    output_channels = 2
+    output_channels = 10
 
     model = UNet(input_channels = input_channels, output_channels=output_channels)
     x = torch.randn(batch_size, input_channels, input_size_h, input_size_w)
