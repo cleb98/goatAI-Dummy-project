@@ -13,6 +13,8 @@ from conf import Conf
 from pycocotools.coco import COCO
 from pre_processing import PreProcessor
 from data_augmentation import DataAugmentation
+from torchvision.transforms import Resize
+from torchvision.transforms import InterpolationMode
 
 
 class CocoDS(Dataset):
@@ -72,7 +74,9 @@ class CocoDS(Dataset):
         y_mask = np.load(mask_path)
         # apply preprocessing to input image to get tensor
         x = self.pre_proc.apply(x_img)
-        y = self.pre_proc.apply(y_mask.transpose(1, 2, 0), binary=True, binary_threshold=0.3)
+        y = torch.from_numpy(y_mask).float()
+        y = Resize((256, 256), interpolation=InterpolationMode.NEAREST)(y) #resize the mask using nearest interpolation to mantain the binary firmat for the mask
+        # y = self.pre_proc.apply(y_mask.transpose(1, 2, 0), binary=True, binary_threshold=0.3)
         #data augmentation if in training mode
         if self.mode == 'train':
             x, y = self.aug_data.random_flip(x, y)

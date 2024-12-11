@@ -18,14 +18,14 @@ def morphological_operations(y_pred):
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
     return closing, opening
 
-def binarized(y_pred):
+def binarize(y_pred):
     # type: (torch.Tensor) -> torch.Tensor
     """
     Apply post-processing in validation phase to predicted tensor, in order to obtain a binary mask.
     :param y_pred:
     :return: y_pred in binary format
     """
-    return torch.where(y_pred > 0.5, 1, 0)
+    return torch.where(y_pred > 0.35,  1, 0)
 
 class PostProcessor(object):
     def __init__(self, out_ch_order='RGB'):

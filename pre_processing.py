@@ -32,15 +32,17 @@ class PreProcessor(object):
             and values in range [0,1] or binary values {0,1} if `binary` is `True`
         """
         # (1) numpy array to torch tensor
-        x = self.to_tensor(img)
+        x = self.to_tensor(img) #rovina y_true perche è gia fra 0 e 1
         # (1.1) resize
         x = self.resize(x)
         # (2) move to device
         x = x.to(self.device)
-        # if binary is True, apply binarization
-        if binary:
-            x = torch.where(x > binary_threshold, 1, 0)
+
+        # # if binary is True, apply binarization
+        # if binary:
+        #     x = torch.where(x > binary_threshold, 1, 0)
                 # (3) unsqueeze (if needed)
+
         if self.unsqueeze:
             x = x.unsqueeze(0)
 

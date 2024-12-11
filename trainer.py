@@ -1,5 +1,4 @@
-from time import time
-
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torchvision as tv
@@ -7,15 +6,14 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
+from time import time
 from conf import Conf
 # from dataset.dummy_ds import DummyDS
 from dataset.coco_ds import CocoDS
 from models import UNet
-from post_processing import binarized
+from post_processing import binarize
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
-
 
 def decode_mask(img):
     #type: (torch.Tensor) -> torch.Tensor
@@ -31,6 +29,40 @@ def decode_mask(img):
     img = (img + 1) * 255 / 10 #background is set from -1 to 0 and class i is set to
     #add channel dim (B, 1, H, W) with values in range [0, 255]
     return img.unsqueeze(1).to(torch.uint8)
+
+def get_color_map(num_classes = 10):
+    #type: (int) -> torch.Tensor
+    """
+    Returns a colormap with distinct colors for each class
+    :param num_classes: total number of classes
+    :return: colormap with distinct colors for each class
+    """
+    colormap = plt.get_cmap('tab10', num_classes)
+    cmap = (colormap(np.arange(num_classes))[:, :3] * 255).astype(np.uint8)
+    cmap = torch.from_numpy(cmap).permute(2, 0, 1)
+
+def decode_mask_rgb(img, num_classes = 10, background_color = (0, 0 , 0), colormap=None):
+    """
+    Decode an image with n channels into an RGB mask with distinct colors for each class.
+    :param img: immagine con n canali (B, C, H, W)
+    :param num_classes: numero totale di classi
+    :param background_color: colore RGB per i pixel di background
+    :param colormap: colormap from matplotlib with distinct colors for each class (use get_color_map helper function)
+    :return: immagine RGB con colori distinti per classe
+    """
+    background_mask = torch,all(img == 0, dim = 1) #identify background pixels
+    class_map = img.argmax(dim=1) #determine the class with the highest probability for each pixel
+    class_map[background_mask] = -1 #set -1 for background pixels
+
+    #create a tensor rgb_colors used as a colormap during decoding
+    if colormap is None:
+        colormap = get_color_map(num_classes).to(img.device)
+    class_colors = torch.tensor(colormap, dtype = torch.uint8, device = img.device)
+    background_color = torch.tensor(background_color, dtype = torch.uint8, device = img.device)
+    rgb_colors = torch.cat([background_color, class_colors], dim=0)
+    # set background color to background pixels with fancy indexing
+    decoded_img = rgb_colors[class_map + 1]  #color_map+1 because currently we have class_map [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9] we want to map it to range [0, 10]
+    return decoded_img
 
 def get_batch_iou(masks_pred, masks_true):
     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
@@ -74,7 +106,7 @@ class Trainer(object):
         """
 
         self.cnf = cnf
-
+        self.cmap = get_color_map()
         # init model
         # self.model = DummyModel()
         self.model = UNet(input_channels=3, output_channels=10)
@@ -185,9 +217,8 @@ class Trainer(object):
             y_pred = self.model.forward(x)
 
             # loss = nn.MSELoss()(y_pred, y_true)
-            # loss = nn.BCELoss()(y_pred, y_true)
-            #entra y_true fra 0 e 1 e y_pred?
-            loss = nn.CrossEntropyLoss()(y_pred, y_true)
+            # loss = nn.CrossEntropyLoss()(y_pred, y_true)
+            loss = nn.BCELoss()(y_pred, y_true) #y_true è binaria, y_pred è una mappa di probabilità per ogni pixels
             loss.backward()
             train_losses.append(loss.item())
 
@@ -233,8 +264,8 @@ class Trainer(object):
             x, y_true = sample
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
             y_pred = self.model.forward(x)
-            y_bin = binarized(y_pred)
-            iou = get_batch_iou_for_classes(y_bin, y_true) # size = (B,C)
+            y_pred = binarize(y_pred)
+            iou = get_batch_iou_for_classes(y_pred, y_true) # size = (B,C)
             acc = torch.where(iou > 0.5, 1, 0)
             #accumulates the iou and accuracy for each batch in the validation set
             val_iou.append(iou)
@@ -246,8 +277,8 @@ class Trainer(object):
             # row #3: target (y_true)
             #reshaping tensors for visualization purposes
             # decoding mask and target mask from c = 10 to c= 1
-            y_pred = decode_mask(y_pred)
             y_true = decode_mask(y_true)
+            y_pred = decode_mask(y_pred)
             # y_true = y_true.sum(dim=1, keepdim=True)
             # from c = 1 to c = 3 for visualization purposes
             y_pred = y_pred.expand(-1, 3, -1, -1).to(self.cnf.device)
@@ -262,13 +293,11 @@ class Trainer(object):
                 img_tensor=grid, global_step=self.epoch
             )
 
-        val_iou = torch.cat(val_iou)  # concatenate all the IoU values
-        val_acc = torch.cat(val_acc)
-        val_acc = val_acc.to(torch.float32) #non sicuro che serva val acc è gia un tensore!(rivedere perchè è qua)
+        val_iou_classes = torch.cat(val_iou).mean(dim=0)  # concatenate all the IoU values and take the mean of the whole validation set for each class
+        val_acc_classes = torch.cat(val_acc).to(torch.float32).mean(dim=0) #non sicuro che serva .to() val acc è gia un tensore!(rivedere perchè è qua)
         # save best model
-        #mean_val_loss1 = np.mean(val_iou)
-        mean_iou = val_iou.mean().item()
-        mean_acc = val_acc.mean().item()
+        mean_iou = val_iou_classes.mean().item() #mean of the mean IoU for each class
+        mean_acc = val_acc_classes.mean().item() #mean of the mean accuracy for each class
 
         first_time = self.best_val_iou is None
         if first_time or (mean_iou > self.best_val_iou):
@@ -280,11 +309,12 @@ class Trainer(object):
 
         # log val results
         print(
+            f'\t● IoU for each class: {[f"{iou:.3f}" for iou in val_iou_classes.tolist()]}\n'
             f'\t● AVG IoU on VAL-set: {mean_iou:.6f}'
             f' │ AVG Accuracy on VAL-set: {mean_acc:.6f}'
             f' │ patience: {self.patience}'
             f' │ T: {time() - t:.2f} s'
-            )
+        )
 
         # log val loss / val metric
         self.sw.add_scalar(

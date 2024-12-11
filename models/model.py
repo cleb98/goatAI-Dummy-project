@@ -149,7 +149,7 @@ class UNet(BaseModel):
         x = self.up_conv3(x, skip_2)
         x = self.up_conv4(x, skip_1)
         x = self.up_conv5(x) #fROM FINAL CONV THE RECONSTUCTED IMAGES IS OBTAINED (0, 255) , LOGIT USED TO FEED CROSS ENTROPY LOSS
-        # x = torch.sigmoid(x) #APPLY SIGMOID TO OBTAIN THE PROBABILITY TO USE WITH BCE LOSS
+        x = torch.sigmoid(x) #APPLY SIGMOID TO OBTAIN THE PROBABILITY TO USE WITH BCE LOSS
 
         return x
 

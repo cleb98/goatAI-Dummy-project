@@ -24,32 +24,100 @@ x_file = '000000289417.jpg'
 
 #fine config
 #############################################
+def get_color_map(num_classes):
+    """
+    Crea una colormap con 'tab10' e ottiene i colori per ogni classe.
 
-def decode_mask(img):
+    :param num_classes: numero totale di classi
+    :return: colormap con colori distinti per ogni classe
+    """
+    # Crea una colormap con 'tab10' e ottiene i colori per ogni classe
+    colormap = plt.get_cmap('tab10', num_classes)
+    class_colors = (colormap(np.arange(num_classes))[:, :3] * 255).astype(np.uint8)
+    return class_colors
+
+def decode_mask_rgb(img, num_classes = 10, background_color = (0, 0 , 0)):
+    """
+    Decodifica un'immagine con n canali in una maschera RGB con colori distinti per ogni classe.
+
+    :param img: immagine con n canali (C, H, W)
+    :param num_classes: numero totale di classi
+    :param background_color: colore RGB per i pixel di background
+    :return: immagine RGB con colori distinti per classe
+    """
+    # Identifica i pixel di background (tutti i canali a zero)
+    background_mask = np.all(img == 0, axis=0)
+
+    # Determina la classe massima per ogni pixel
+    class_map = img.argmax(axis=0)
+    class_map[background_mask] = -1  # Imposta -1 per i pixel di background
+
+    # Crea una colormap con 'tab10' e ottiene i colori per ogni classe
+    colormap = get_color_map(num_classes)
+
+    # Inserisce il colore di background come primo colore
+    rgb_colors = np.vstack([np.array(background_color, dtype=np.uint8), class_colors])
+
+    # Crea l'immagine RGB vuota
+    decoded_img = np.zeros((class_map.shape[0], class_map.shape[1], 3), dtype=np.uint8)
+
+    # Assegna il colore background
+    decoded_img[class_map == -1] = rgb_colors[0]
+
+    # Assegna i colori alle classi
+    for class_idx in range(num_classes):
+        mask = (class_map == class_idx)
+        # class_idx+1 perché l'indice 0 è stato riservato al background
+        decoded_img[mask] = rgb_colors[class_idx + 1]
+
+    return decoded_img
+
+
+
+def decode_mask_grayscale(img):
     #type: (np.ndarray) -> np.ndarray
     '''
     Decodes the iamge with n channels to a single channel grayscale mask
     :param img: image with n channels
     :return: single channel image
     '''
-    background_mask = np.all(img == 0, axis=0)
+    background_mask = np.all(img == 0, axis=0) #identify where backgrund is
     back = np.zeros_like(img[0], dtype=np.int8)
     back[background_mask] = -1 #background pixels mapped to -1
     img = img.argmax(axis=0) + back #pixels ==0 are now class 0 (not background) and pixels == -1 are background
     img = (img + 1) * 255 / 10 #background is set from -1 to 0 and class i is set to
+
     return img.astype(np.uint8)
 
+
 def plot_images(x, y, label_name):
+    """
+    Visualizza un'immagine e la sua corrispondente maschera.
+
+    :param x: immagine di input (H, W, 3)
+    :param y: maschera (H, W) o (H, W, 3)
+    :param label_name: nome/etichetta della classe
+    """
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    ax[0].imshow(x, cmap='gray')
+
+    # Mostra l'immagine di input (RGB)
+    ax[0].imshow(x)  # Assicurati che x sia un'immagine RGB (H, W, 3)
     ax[0].axis('off')
     ax[0].set_title('Input Image')
-    ax[1].imshow(y, cmap='gray')
+
+    # Mostra la maschera
+    if y.ndim == 3:  # Maschera RGB
+        ax[1].imshow(y)
+    else:  # Maschera in scala di grigi
+        ax[1].imshow(y, cmap='gray')
+
     ax[1].axis('off')
     ax[1].set_title('Mask')
-    fig.suptitle(label_name)
-        
 
+    # Titolo globale
+    fig.suptitle(label_name)
+
+    plt.tight_layout()
     plt.show()
 
 def show_images(x_path, y_path):
@@ -58,9 +126,11 @@ def show_images(x_path, y_path):
     x_img_name = x_path.split('/')[-1]
     y_img = np.load(y_path)
     cat_val = np.unique(y_img)
-    print(cat_val, 'classes values') #grayscale values of the classes
+    print(cat_val, 'pixels values befoire decoding') #grayscale values of the classes
     #y è un un file.npy a 10 canali, sommo i canali per ottenere un'immagine in bianco e nero
-    y_img = decode_mask(y_img) #decode the mask to a single channel image
+    y_img = decode_mask_rgb(y_img, ) #decode the mask to a single channel image
+    cat_val = np.unique(y_img)
+    print(cat_val, 'pixels values post decoding') #grayscale values of the classes
     #info about classes in the json file, added to the plot
     cat = cat_info[x_img_name]
     print(cat)
@@ -72,8 +142,8 @@ def show_images(x_path, y_path):
 
 
 if __name__ == '__main__':
-    #show single image defined above
-    #x_path and y_path are defined above in cofing section
+
+    #show single image, x_path and y_path are defined above in cofing section
     # show_images(x_path, y_path)
 
     #show num_img images
