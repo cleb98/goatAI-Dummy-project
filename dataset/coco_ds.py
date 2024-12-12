@@ -13,8 +13,8 @@ from conf import Conf
 from pycocotools.coco import COCO
 from pre_processing import PreProcessor
 from data_augmentation import DataAugmentation
-from torchvision.transforms import Resize
-from torchvision.transforms import InterpolationMode
+from torchvision.transforms import Resize, InterpolationMode
+
 
 
 class CocoDS(Dataset):

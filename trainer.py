@@ -11,58 +11,10 @@ from conf import Conf
 # from dataset.dummy_ds import DummyDS
 from dataset.coco_ds import CocoDS
 from models import UNet
-from post_processing import binarize
+from post_processing import binarize, get_color_map, decode_mask_rgb
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
 
-def decode_mask(img):
-    #type: (torch.Tensor) -> torch.Tensor
-    '''
-    Decodes the image with n channels to a single channel grayscale mask
-    :param img: tensor with n channels
-    :return: img_decoded: single channel mask torch tensor in uint8
-    '''
-    background_mask = torch.all(img == 0, dim=1) #shape = (B,1,H,W)
-    back = torch.zeros_like(img, dtype=torch.int8).sum(dim=1) #shape = (B,1,H,W)
-    back[background_mask] = -1 #background pixels mapped to -1
-    img = img.argmax(dim=1) + back #pixels ==0 are now class 0 (not background) and pixels == -1 are background
-    img = (img + 1) * 255 / 10 #background is set from -1 to 0 and class i is set to
-    #add channel dim (B, 1, H, W) with values in range [0, 255]
-    return img.unsqueeze(1).to(torch.uint8)
-
-def get_color_map(num_classes = 10):
-    #type: (int) -> torch.Tensor
-    """
-    Returns a colormap with distinct colors for each class
-    :param num_classes: total number of classes
-    :return: colormap with distinct colors for each class
-    """
-    colormap = plt.get_cmap('tab10', num_classes)
-    cmap = (colormap(np.arange(num_classes))[:, :3] * 255).astype(np.uint8)
-    cmap = torch.from_numpy(cmap).permute(2, 0, 1)
-
-def decode_mask_rgb(img, num_classes = 10, background_color = (0, 0 , 0), colormap=None):
-    """
-    Decode an image with n channels into an RGB mask with distinct colors for each class.
-    :param img: immagine con n canali (B, C, H, W)
-    :param num_classes: numero totale di classi
-    :param background_color: colore RGB per i pixel di background
-    :param colormap: colormap from matplotlib with distinct colors for each class (use get_color_map helper function)
-    :return: immagine RGB con colori distinti per classe
-    """
-    background_mask = torch,all(img == 0, dim = 1) #identify background pixels
-    class_map = img.argmax(dim=1) #determine the class with the highest probability for each pixel
-    class_map[background_mask] = -1 #set -1 for background pixels
-
-    #create a tensor rgb_colors used as a colormap during decoding
-    if colormap is None:
-        colormap = get_color_map(num_classes).to(img.device)
-    class_colors = torch.tensor(colormap, dtype = torch.uint8, device = img.device)
-    background_color = torch.tensor(background_color, dtype = torch.uint8, device = img.device)
-    rgb_colors = torch.cat([background_color, class_colors], dim=0)
-    # set background color to background pixels with fancy indexing
-    decoded_img = rgb_colors[class_map + 1]  #color_map+1 because currently we have class_map [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9] we want to map it to range [0, 10]
-    return decoded_img
 
 def get_batch_iou(masks_pred, masks_true):
     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
@@ -106,12 +58,10 @@ class Trainer(object):
         """
 
         self.cnf = cnf
-        self.cmap = get_color_map()
         # init model
-        # self.model = DummyModel()
-        self.model = UNet(input_channels=3, output_channels=10)
+        self.model = UNet(input_channels=3, num_classes=10)
         self.model = self.model.to(cnf.device)
-
+        self.cmap = get_color_map(self.model.num_classes).to(cnf.device)
         # init optimizer
         self.optimizer = optim.AdamW(
             params=self.model.parameters(), lr=cnf.lr
@@ -271,18 +221,15 @@ class Trainer(object):
             val_iou.append(iou)
             val_acc.append(acc)
 
+            #reshaping tensors for visualization purposes
+            # from c = 10 to c = 3 for visualization purposes
+            y_pred = decode_mask_rgb(y_pred, colormap=self.cmap)
+            y_true = decode_mask_rgb(y_true, colormap=self.cmap)
+
             # draw results for this step in a 3 rows grid:
             # row #1: input (x)
             # row #2: predicted_output (y_pred)
             # row #3: target (y_true)
-            #reshaping tensors for visualization purposes
-            # decoding mask and target mask from c = 10 to c= 1
-            y_true = decode_mask(y_true)
-            y_pred = decode_mask(y_pred)
-            # y_true = y_true.sum(dim=1, keepdim=True)
-            # from c = 1 to c = 3 for visualization purposes
-            y_pred = y_pred.expand(-1, 3, -1, -1).to(self.cnf.device)
-            y_true = y_true.expand(-1, 3, -1, -1).to(self.cnf.device)
             grid = torch.cat([x, y_pred, y_true], dim=0)
             grid = tv.utils.make_grid(
                 grid, normalize=True, value_range=(0, 1),

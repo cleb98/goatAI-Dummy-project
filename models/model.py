@@ -100,18 +100,18 @@ class Up(nn.Module):
 
 class UNet(BaseModel):
     """
-    UNet model for segmentation of images with output_channels classes
+    UNet model for segmentation of images with num_classes classes
     """
 
-    def __init__(self, input_channels = 3, output_channels= 10):
+    def __init__(self, input_channels = 3, num_classes= 10):
         # type: (int, int) -> None
 
         super(UNet, self).__init__()
 
         self.input_channels = input_channels
         print('input channels: ', self.input_channels)
-        self.output_channels = output_channels
-        print('output channels: ', self.output_channels)
+        self.num_classes = num_classes
+        print('output channels: ', self.num_classes)
 
         # downsampling
         self.down_conv1 = Down(in_channels=self.input_channels, out_channels=64)
@@ -129,7 +129,7 @@ class UNet(BaseModel):
         self.up_conv4 = Up(in_channels=(64 + 128), out_channels=64)
 
         # final
-        self.up_conv5 = nn.Conv2d(in_channels=64, out_channels=self.output_channels, kernel_size=1)
+        self.up_conv5 = nn.Conv2d(in_channels=64, out_channels=self.num_classes, kernel_size=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # with amp.autocast():
@@ -161,9 +161,9 @@ def test():
     input_size_h = 256
     input_size_w = 256
 
-    output_channels = 10
+    num_classes = 10
 
-    model = UNet(input_channels = input_channels, output_channels=output_channels)
+    model = UNet(input_channels = input_channels, num_classes=num_classes)
     x = torch.randn(batch_size, input_channels, input_size_h, input_size_w)
     print(x.shape)
     y = model(x)

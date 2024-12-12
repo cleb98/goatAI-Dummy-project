@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=102 # Inserisci la quantità di memoria richiesta
+#SBATCH --mem= # Inserisci la quantità di memoria richiesta
 #SBATCH --gres=gpu:1
-#SBATCH --time=01:00:00
-#SBATCH --job-name=unet-segmentation
+#SBATCH --time=12:00:00
+#SBATCH --job-name=unet-coco
 #SBATCH --partition=all_usr_prod
 #SBATCH --account=tesi_cbellucci
 #SBATCH -e slurm-%j.err

@@ -5,7 +5,7 @@ import os
 from pycocotools.coco import COCO
 import json
 
-from pygments.styles.dracula import background
+
 
 #############################################
 #config
@@ -56,7 +56,7 @@ def decode_mask_rgb(img, num_classes = 10, background_color = (0, 0 , 0)):
     colormap = get_color_map(num_classes)
 
     # Inserisce il colore di background come primo colore
-    rgb_colors = np.vstack([np.array(background_color, dtype=np.uint8), class_colors])
+    rgb_colors = np.vstack([np.array(background_color, dtype=np.uint8), colormap])
 
     # Crea l'immagine RGB vuota
     decoded_img = np.zeros((class_map.shape[0], class_map.shape[1], 3), dtype=np.uint8)
@@ -72,8 +72,6 @@ def decode_mask_rgb(img, num_classes = 10, background_color = (0, 0 , 0)):
 
     return decoded_img
 
-
-
 def decode_mask_grayscale(img):
     #type: (np.ndarray) -> np.ndarray
     '''
@@ -88,7 +86,6 @@ def decode_mask_grayscale(img):
     img = (img + 1) * 255 / 10 #background is set from -1 to 0 and class i is set to
 
     return img.astype(np.uint8)
-
 
 def plot_images(x, y, label_name):
     """
@@ -124,16 +121,17 @@ def show_images(x_path, y_path):
     cat_info = json.load(open(y_folder + '/img_classes.json'))
     x_img = mpimg.imread(x_path)
     x_img_name = x_path.split('/')[-1]
+    cat = cat_info[x_img_name]
+    print(cat)
     y_img = np.load(y_path)
     cat_val = np.unique(y_img)
     print(cat_val, 'pixels values befoire decoding') #grayscale values of the classes
     #y è un un file.npy a 10 canali, sommo i canali per ottenere un'immagine in bianco e nero
-    y_img = decode_mask_rgb(y_img, ) #decode the mask to a single channel image
+    y_img = decode_mask_rgb(y_img) #decode the mask to a single channel image
     cat_val = np.unique(y_img)
     print(cat_val, 'pixels values post decoding') #grayscale values of the classes
     #info about classes in the json file, added to the plot
-    cat = cat_info[x_img_name]
-    print(cat)
+
 
     plot_images(x_img, y_img, cat)
 
@@ -148,8 +146,8 @@ if __name__ == '__main__':
 
     #show num_img images
     num_img = 12
+    coco = COCO('/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json')
     for i, file in enumerate(os.listdir(x_folder)):
-        coco = COCO('/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json')
         #load the image from json file
         img_id = coco.getImgIds()
         img_info = coco.loadImgs(img_id[i])[0]
