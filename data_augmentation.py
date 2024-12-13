@@ -21,12 +21,12 @@ class DataAugmentation:
         if random.random() < p:
             x = self.hflip(x)
             y = self.hflip(y)
+            print('flipped horizontally')
 
         if random.random() < p:
             x = self.vflip(x)
             y = self.vflip(y)
-
-        # x, y = x.to(self.device), y.to(self.device)
+            print('flipped vertically')
 
         return x, y
 

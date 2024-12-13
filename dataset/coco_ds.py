@@ -75,7 +75,7 @@ class CocoDS(Dataset):
         # apply preprocessing to input image to get tensor
         x = self.pre_proc.apply(x_img)
         y = torch.from_numpy(y_mask).float()
-        y = Resize((256, 256), interpolation=InterpolationMode.NEAREST)(y) #resize the mask using nearest interpolation to mantain the binary firmat for the mask
+        y = Resize((256, 256), interpolation=InterpolationMode.NEAREST)(y) #resize the mask using nearest interpolation to mantain the binary format for the mask
         # y = self.pre_proc.apply(y_mask.transpose(1, 2, 0), binary=True, binary_threshold=0.3)
         #data augmentation if in training mode
         if self.mode == 'train':

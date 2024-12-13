@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem= # Inserisci la quantità di memoria richiesta
+#SBATCH --mem=40 # Inserisci la quantità di memoria richiesta
 #SBATCH --gres=gpu:1
-#SBATCH --time=12:00:00
+#SBATCH --time=10:00:00
 #SBATCH --job-name=unet-coco
 #SBATCH --partition=all_usr_prod
 #SBATCH --account=tesi_cbellucci

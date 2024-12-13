@@ -223,8 +223,8 @@ class Trainer(object):
 
             #reshaping tensors for visualization purposes
             # from c = 10 to c = 3 for visualization purposes
-            y_pred = decode_mask_rgb(y_pred, colormap=self.cmap)
-            y_true = decode_mask_rgb(y_true, colormap=self.cmap)
+            y_pred = decode_mask_rgb(y_pred, colormap=self.cmap).float() / 255.0
+            y_true = decode_mask_rgb(y_true, colormap=self.cmap).float() / 255.0
 
             # draw results for this step in a 3 rows grid:
             # row #1: input (x)
