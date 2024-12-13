@@ -16,10 +16,9 @@ DS_ROOT: '/work/tesi_cbellucci/coco/images/'
 #the dataset is a subset of the original COCO dataset, filtered to have a balanced dataset of 1000 images for 10 classes
 TRAIN_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/filtered_instances_train2017.json'
 VAL_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
-TRAIN_MASK: '/work/tesi_cbellucci/coco/images/masks'
+TRAIN_MASK: '/work/tesi_cbellucci/coco/images/train_masks'
 VAL_MASK: '/work/tesi_cbellucci/coco/images/val_masks'
 
 #root for dataset of other tasks
 #DS_ROOT: '$PROJECT_DIR/dataset/kwasir-seg'
 #DS_ROOT: '$PROJECT_DIR/dataset/samples_seg'
-#DS_URL: 'https://drive.google.com/file/d/11wCoSgY-QvJw147HieBv7E4sIEaLNEoW/view?usp=drive_linkì'

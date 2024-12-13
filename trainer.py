@@ -32,7 +32,7 @@ def get_batch_iou(masks_pred, masks_true):
     union = torch.logical_or(masks_pred, masks_true).sum((1, 2, 3))
     return torch.where(union != 0, inters / union, 0)
 
-def get_batch_iou_for_classes(masks_pred, masks_true):
+def get_batch_iou_multiclass(masks_pred, masks_true):
     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
     """
     Compute the intersection over union between two batches of binary masks.
@@ -41,9 +41,11 @@ def get_batch_iou_for_classes(masks_pred, masks_true):
         ->> shape: (B, C, H, W); values: bin{0, 1}
     :param masks_true: target binary masks
         ->> shape: (B, C, H, W); values: bin{0, 1}
-    :return: IoU value for each element in the batch
+    :return: IoU value for each element in the batch, where IoU = mask_pred ∩ mask_true / mask_pred ∪ mask_true
         ->> shape: (B,C); values: range[0, 1]
     """
+    assert masks_pred.shape == masks_true.shape, "Predicted and target masks must have the same shape"
+
     inters = torch.logical_and(masks_pred, masks_true).sum((2, 3))
     union = torch.logical_or(masks_pred, masks_true).sum((2, 3))
     return torch.where(union != 0, inters / union, 0)
@@ -215,7 +217,7 @@ class Trainer(object):
             x, y_true = x.to(self.cnf.device), y_true.to(self.cnf.device)
             y_pred = self.model.forward(x)
             y_pred = binarize(y_pred)
-            iou = get_batch_iou_for_classes(y_pred, y_true) # size = (B,C)
+            iou = get_batch_iou_multiclass(y_pred, y_true) # size = (B,C)
             acc = torch.where(iou > 0.5, 1, 0)
             #accumulates the iou and accuracy for each batch in the validation set
             val_iou.append(iou)
@@ -300,3 +302,18 @@ class Trainer(object):
 
             self.epoch += 1
             self.save_ck()
+
+if __name__ == '__main__':
+
+    #Iou multiclasses test
+    masks_pred = torch.tensor([
+        [[[0, 1], [0, 0]], [[1, 0], [0, 0]], [[0, 0], [0, 0]]]
+    ], dtype=torch.uint8)  # Shape: (1, 3, 2, 2)
+
+    masks_true = torch.tensor([
+        [[[0, 1], [0, 0]], [[1, 0], [0, 0]], [[0, 0], [0, 0]]]
+    ], dtype=torch.uint8)  # Shape: (1, 3, 2, 2)
+
+    # Calcolo dell'IoU
+    iou = get_multiclass_iou(masks_pred, masks_true)
+    print("IoU:", iou)

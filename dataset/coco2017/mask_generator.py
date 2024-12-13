@@ -31,7 +31,7 @@ def generate_mask(annotations_files, images_dir, output_dir):
     img_classes = {}
 
     # Path to save the JSON file
-    json_output = os.path.join(output_dir, 'img_classes.json')
+    json_output = os.path.join(output_dir, '_')
 
     for img_id in tqdm(img_ids, desc="Processing images"):
         # Load image information
@@ -85,12 +85,12 @@ def generate_mask(annotations_files, images_dir, output_dir):
 
 
 if __name__ == '__main__':
-    # Generate masks for validation images
-    annotations_files = '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
-    images_dir = '/work/tesi_cbellucci/coco/images/val'
-    output_dir = '/work/tesi_cbellucci/coco/images/val_masks'
-    print('Generating masks for validation images...')
-    generate_mask(annotations_files, images_dir, output_dir)
+    # # Generate masks for validation images
+    # annotations_files = '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
+    # images_dir = '/work/tesi_cbellucci/coco/images/val'
+    # output_dir = '/work/tesi_cbellucci/coco/images/val_masks'
+    # print('Generating masks for validation images...')
+    # generate_mask(annotations_files, images_dir, output_dir)
 
     # Generate masks for training images
     annotations_files = '/work/tesi_cbellucci/coco/annotations/filtered_instances_train2017.json'

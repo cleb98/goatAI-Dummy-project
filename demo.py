@@ -12,8 +12,16 @@ from post_processing import PostProcessor, decode_mask_rgb, get_color_map
 from torchvision.transforms import Resize, InterpolationMode
 
 class Demo:
-    def __init__(self, exp_name):
+    def __init__(self, exp_name, mode = 'val'):
         self.cnf = Conf(exp_name=exp_name)
+        self.mode = mode
+        self.x_folder = os.path.join(self.cnf.ds_root, mode)
+        if self.mode == 'train':
+            self.masks_dir = self.cnf.train_mask
+            self.annotation = self.cnf.train_ann
+        if self.mode == 'val':
+            self.masks_dir = self.cnf.val_mask
+            self.annotation = self.cnf.val_ann
         self.pre_proc = PreProcessor(unsqueeze=False, device='cpu')
         self.post_proc = PostProcessor()
         self.model = UNet()
@@ -21,10 +29,8 @@ class Demo:
         self.model.requires_grad_(False)
         self.model = self.model.to(self.cnf.device)
         self.model.load_w(self.cnf.exp_log_path / 'best.pth')
-        self.coco = COCO('/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json')
-        self.x_folder = os.path.join(self.cnf.ds_root, 'val')
-        self.y_folder = self.cnf.val_mask
-        self.cat_info = json.load(open(self.y_folder + '/img_classes.json'))
+        self.coco = COCO(self.annotation)
+        self.cat_info = json.load(open(self.masks_dir + '/img_classes.json'))
 
 
 
@@ -37,6 +43,7 @@ class Demo:
 
         # Pre-process the input and mask
         x_img = self.pre_proc.apply(x_img).numpy().transpose(1, 2, 0)
+
         y_img = torch.from_numpy(y_img).float()
         y_img = Resize((256, 256), interpolation=InterpolationMode.NEAREST)(y_img)
 
@@ -48,10 +55,10 @@ class Demo:
 
         print("Pixel values after decoding:", np.unique(y_img))
 
-        #forward pass and post-processing
-        y_pred = self.model.forward(x_img)
-        y_pred = self.post_proc.apply(y_pred.unsqueeze(0), save_path=cnf.exp_log_path)
-        y_pred = y_pred.numpy()
+        # #forward pass and post-processing
+        # y_pred = self.model.forward(x_img)
+        # y_pred = self.post_proc.apply(y_pred.unsqueeze(0), save_path=cnf.exp_log_path)
+        # y_pred = y_pred.numpy()
         y_pred = None
 
         # Visualize the images
@@ -75,7 +82,7 @@ class Demo:
         for i, img_id in enumerate(img_ids):
             img_info = self.coco.loadImgs(img_id)[0]
             x_path = os.path.join(self.x_folder, img_info['file_name'])
-            y_path = os.path.join(self.y_folder, img_info['file_name'].split('.')[0] + '_mask.npy')
+            y_path = os.path.join(self.masks_dir, img_info['file_name'].split('.')[0] + '_mask.npy')
 
             if os.path.exists(x_path) and os.path.exists(y_path):
                 label_name = self.cat_info.get(img_info['file_name'], "Unknown")
@@ -86,7 +93,7 @@ class Demo:
 
 if __name__ == '__main__':
     try:
-        demo = Demo(exp_name='default')
+        demo = Demo(exp_name='default', mode='val')
         demo.run(num_img=5)
     except Exception as e:
         print(f'Error: {e}')

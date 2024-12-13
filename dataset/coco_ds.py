@@ -43,7 +43,6 @@ class CocoDS(Dataset):
             self.annotation = self.cnf.val_ann
         self.coco = COCO(self.annotation)
         self.img_ids = self.coco.getImgIds()
-
         self.pre_proc = PreProcessor(unsqueeze=False, device='cpu')
         self.aug_data = DataAugmentation()
 
