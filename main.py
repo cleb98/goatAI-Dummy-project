@@ -27,7 +27,8 @@ def main(exp_name, conf_file_path, seed):
     # ask the user to enter it
     if exp_name is None:
         # exp_name = click.prompt('▶ experiment name', default='default')
-        exp_name = '1class'
+        # exp_name = 'default'
+        exp_name = exp_name
 
     # if `exp_name` contains '!',
     # `log_each_step` becomes `False`
@@ -59,6 +60,6 @@ def main(exp_name, conf_file_path, seed):
 srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gpu:1 --pty bash
 '''
 if __name__ == '__main__':
-    main()
+    main(exp_name = 'default')
 
 

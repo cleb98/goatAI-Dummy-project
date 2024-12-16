@@ -38,6 +38,7 @@ Thumbs.db
 *.jpg
 *.png
 *.jpeg
+*.npy
 
 #raw data
 *.csv

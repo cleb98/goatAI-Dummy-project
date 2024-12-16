@@ -4,7 +4,7 @@
 #SBATCH --mem=40G
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00
-#SBATCH --job-name=unet-coco-multilabel-1
+#SBATCH --job-name=1-class-coco
 #SBATCH --partition=all_usr_prod
 #SBATCH --account=tesi_cbellucci
 #SBATCH -e slurm-log/%x-%j.err
