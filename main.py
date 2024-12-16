@@ -17,11 +17,11 @@ from trainer import Trainer
 cudnn.benchmark = True
 
 
-@click.command()
-@click.option('--exp_name', type=str, default=None)
-@click.option('--conf_file_path', type=str, default=None)
-@click.option('--seed', type=int, default=None)
-def main(exp_name, conf_file_path, seed):
+# @click.command()
+# @click.option('--exp_name', type=str, default=None)
+# @click.option('--conf_file_path', type=str, default=None)
+# @click.option('--seed', type=int, default=None)
+def run_exp(exp_name, conf_file_path = None, seed = None):
     # type: (str, str, int) -> None
     # if `exp_name` is None,
     # ask the user to enter it
@@ -60,6 +60,6 @@ def main(exp_name, conf_file_path, seed):
 srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gpu:1 --pty bash
 '''
 if __name__ == '__main__':
-    # main()
-    main(exp_name = '1class')
+    # run_exp()
+    run_exp(exp_name='1class')
 
