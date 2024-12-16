@@ -117,7 +117,7 @@ def plot_images(x, y, label_name):
     plt.tight_layout()
     plt.show()
 
-def show_images(x_path, y_path):
+def read_images(x_path, y_path):
     cat_info = json.load(open(y_folder + '/img_classes.json'))
     x_img = mpimg.imread(x_path)
     x_img_name = x_path.split('/')[-1]
@@ -138,11 +138,10 @@ def show_images(x_path, y_path):
     print(f'Image shape: {x_img.shape}')
     print(f'Mask shape: {y_img.shape}')
 
-
 if __name__ == '__main__':
 
     #show single image, x_path and y_path are defined above in cofing section
-    # show_images(x_path, y_path)
+    # read_images(x_path, y_path)
 
     #show num_img images
     num_img = 1
@@ -150,7 +149,8 @@ if __name__ == '__main__':
     x_folder = '/work/tesi_cbellucci/coco/images/train'
     y_folder = '/work/tesi_cbellucci/coco/images/train_masks'
     coco = COCO('/work/tesi_cbellucci/coco/annotations/filtered_instances_train2017.json')
-    for i, file in enumerate(os.listdir(x_folder)):
+    img_ids = coco.getImgIds()
+    for i, img_id in enumerate(img_ids):
         #load the image from json file
         img_id = coco.getImgIds()
         img_info = coco.loadImgs(img_id[i])[0]
@@ -158,16 +158,14 @@ if __name__ == '__main__':
         # y_path = os.path.join(y_folder, img_info['file_name'].split('.')[0] + '_mask.npy')
 
         #show the image and its mask in rgb
-        # show_images(x_path, y_path)
+        # read_images(x_path, y_path)
 
         #save filtered dataset from coco2017, in a new folder
         save_path = '/homes/cbellucci/segmentation/dataset/coco/images/train'
         cv2.imwrite(os.path.join(save_path, img_info['file_name']),
                    cv2.imread(x_path)
                    )
-
-
-        print(i, ': saving image ' + img_info['file_name'] + ' da ' + x_folder)
+        print(i, ': saving image ' + img_info['file_name'] + ' da ' + x_folder, ' to\n', save_path)
         # if i == num_img:
         #     break
 

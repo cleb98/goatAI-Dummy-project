@@ -6,7 +6,7 @@ import os
 from pycocotools.coco import COCO
 import json
 from conf import Conf
-from models.model import UNet
+from models.model import UNet, UNet1
 from pre_processing import PreProcessor
 from post_processing import PostProcessor, decode_mask_rgb, get_color_map
 from torchvision.transforms import Resize, InterpolationMode
@@ -24,7 +24,7 @@ class Demo:
             self.annotation = self.cnf.val_ann
         self.pre_proc = PreProcessor(unsqueeze=False, device='cpu')
         self.post_proc = PostProcessor()
-        self.model = UNet()
+        self.model = UNet1(input_channels=3, num_classes=10)
         self.model.eval()
         self.model.requires_grad_(False)
         self.model = self.model.to(self.cnf.device)
@@ -45,6 +45,7 @@ class Demo:
         x_img = self.pre_proc.apply(x_img).numpy().transpose(1, 2, 0)
 
         y_img = torch.from_numpy(y_img).float()
+        y_img = y_img[:self.cnf.num_classes]
         y_img = Resize((256, 256), interpolation=InterpolationMode.NEAREST)(y_img)
 
         print("Pixel values before decoding:", np.unique(y_img.numpy()))
@@ -93,7 +94,7 @@ class Demo:
 
 if __name__ == '__main__':
     try:
-        demo = Demo(exp_name='default', mode='val')
+        demo = Demo(exp_name='1class', mode='val')
         demo.run(num_img=5)
     except Exception as e:
         print(f'Error: {e}')

@@ -1,6 +1,3 @@
-import torch
-from torch import nn
-
 from models.base import BaseModel
 import torch
 import torch.nn as nn
@@ -148,7 +145,7 @@ class UNet(BaseModel):
         x = self.up_conv2(x, skip_3)
         x = self.up_conv3(x, skip_2)
         x = self.up_conv4(x, skip_1)
-        x = self.up_conv5(x) #fROM FINAL CONV THE RECONSTUCTED IMAGES IS OBTAINED (0, 255) , LOGIT USED TO FEED CROSS ENTROPY LOSS
+        x = self.up_conv5(x) #fROM FINAL CONV THE RECONSTUCTED IMAGES IS OBTAINED (0, 255) , LOGIT USED TO FEED CROSS ENTROPY LOSS or BCEwithLogitsLoss
         x = torch.sigmoid(x) #APPLY SIGMOID TO OBTAIN THE PROBABILITY TO USE WITH BCE LOSS
 
         return x
@@ -174,3 +171,124 @@ if __name__ == "__main__":
 
 
 
+
+# import torch
+# import torch.nn as nn
+# import torchvision.transforms.functional as TF
+#
+# from models import BaseModel
+#
+#
+# class DoubleConv(nn.Module):
+#     def __init__(self, in_channels, out_channels):
+#         super(DoubleConv, self).__init__()
+#         self.double_conv = nn.Sequential(
+#             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(out_channels),
+#             nn.ReLU(inplace=True),
+#             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(out_channels),
+#             nn.ReLU(inplace=True)
+#         )
+#
+#     def forward(self, x):
+#         return self.double_conv(x)
+#
+#
+# class AttentionBlock(nn.Module):
+#     """
+#     Attention mechanism for UNet to focus on important regions.
+#     """
+#     def __init__(self, g_channels, x_channels):
+#         super(AttentionBlock, self).__init__()
+#         self.gate_conv = nn.Conv2d(g_channels, x_channels, kernel_size=1)
+#         self.input_conv = nn.Conv2d(x_channels, x_channels, kernel_size=1)
+#         self.attn_conv = nn.Conv2d(x_channels, 1, kernel_size=1)
+#         self.sigmoid = nn.Sigmoid()
+#
+#     def forward(self, g, x):
+#         # Compute attention weights
+#         g1 = self.gate_conv(g)
+#         x1 = self.input_conv(x)
+#         attn = self.sigmoid(self.attn_conv(g1 + x1))
+#         return x * attn
+#
+#
+# class Down(nn.Module):
+#     def __init__(self, in_channels, out_channels):
+#         super(Down, self).__init__()
+#         self.maxpool = nn.MaxPool2d(kernel_size=2)
+#         self.double_conv = DoubleConv(in_channels, out_channels)
+#
+#     def forward(self, x):
+#         x = self.maxpool(x)
+#         return self.double_conv(x)
+#
+#
+# class Up(nn.Module):
+#     def __init__(self, in_channels, out_channels):
+#         super(Up, self).__init__()
+#         self.upconv = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+#         self.double_conv = DoubleConv(in_channels, out_channels)
+#         self.attention = AttentionBlock(g_channels=out_channels, x_channels=out_channels)
+#
+#     def forward(self, x, skip):
+#         x = self.upconv(x)
+#         if x.shape != skip.shape:
+#             x = TF.resize(x, size=skip.shape[2:])
+#         skip = self.attention(x, skip)
+#         x = torch.cat([x, skip], dim=1)
+#         return self.double_conv(x)
+#
+#
+# class UNet1(BaseModel):
+#     def __init__(self, input_channels=3, num_classes=10):
+#         super(UNet1, self).__init__()
+#
+#         self.down1 = DoubleConv(input_channels, 64)
+#         self.down2 = Down(64, 128)
+#         self.down3 = Down(128, 256)
+#         self.down4 = Down(256, 512)
+#         self.bottleneck = DoubleConv(512, 1024)
+#
+#         self.up1 = Up(1024, 512)
+#         self.up2 = Up(512, 256)
+#         self.up3 = Up(256, 128)
+#         self.up4 = Up(128, 64)
+#
+#         self.final_conv = nn.Conv2d(64, num_classes, kernel_size=1)
+#         self.sigmoid = nn.Sigmoid()
+#         self.num_classes = num_classes
+#
+#
+#     def forward(self, x):
+#         skip1 = self.down1(x)
+#         skip2 = self.down2(skip1)
+#         skip3 = self.down3(skip2)
+#         skip4 = self.down4(skip3)
+#         bottleneck = self.bottleneck(skip4)
+#
+#         x = self.up1(bottleneck, skip4)
+#         x = self.up2(x, skip3)
+#         x = self.up3(x, skip2)
+#         x = self.up4(x, skip1)
+#
+#         x = self.final_conv(x)
+#         return self.sigmoid(x)  # For BCEWithLogitsLoss, remove this and use raw logits
+
+
+def test():
+    batch_size = 1
+    input_channels = 3
+    input_size = (256, 256)
+    num_classes = 1
+
+    model = UNet(input_channels=input_channels, num_classes=num_classes)
+    x = torch.randn(batch_size, input_channels, *input_size)
+    y = model(x)
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {y.shape}")
+
+
+if __name__ == "__main__":
+    test()

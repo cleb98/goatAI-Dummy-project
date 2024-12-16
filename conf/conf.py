@@ -130,6 +130,7 @@ class Conf(object):
         self.n_workers = y.get('N_WORKERS', 4)  # type: int
         self.batch_size = y.get('BATCH_SIZE', 8)  # type: int
         self.max_patience = y.get('MAX_PATIENCE', 8)  # type: int
+        self.num_classes = y.get('NUM_CLASSES', 10)  # type: int
 
         default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.device = y.get('DEVICE', default_device)  # type: str

@@ -1,12 +1,15 @@
+#use this file to set the parameters of the training
+#in the conf.py, if you use exp_name = 'default',
+#if you want to use a folder different from 'default', you have to change the exp_name main.py and create a new conf file
+#named "new_exp_name.yaml"
+
 # training parameters
-LR: 0.0006
+LR: 0.001
 EPOCHS: 300
 MAX_PATIENCE: 100
-
+NUM_CLASSES: 10
 # model parameters
-
 DEVICE: 'cuda'
-
 
 # dataset/dataloader parameters
 N_WORKERS: 4
@@ -18,7 +21,3 @@ TRAIN_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/filtered_instances_trai
 VAL_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
 TRAIN_MASK: '/work/tesi_cbellucci/coco/images/train_masks'
 VAL_MASK: '/work/tesi_cbellucci/coco/images/val_masks'
-
-#root for dataset of other tasks
-#DS_ROOT: '$PROJECT_DIR/dataset/kwasir-seg'
-#DS_ROOT: '$PROJECT_DIR/dataset/samples_seg'

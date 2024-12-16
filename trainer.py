@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torchvision as tv
@@ -16,21 +15,21 @@ from progress_bar import ProgressBar
 from scheduler import LRScheduler
 
 
-def get_batch_iou(masks_pred, masks_true):
-    # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
-    """
-    Compute the intersection over union between two batches of binary masks.
-
-    :param masks_pred: predicted binary masks
-        ->> shape: (B, 1, H, W); values: bin{0, 1}
-    :param masks_true: target binary masks
-        ->> shape: (B, 1, H, W); values: bin{0, 1}
-    :return: IoU value for each element in the batch
-        ->> shape: (B,); values: range[0, 1]
-    """
-    inters = torch.logical_and(masks_pred, masks_true).sum((2, 3))
-    union = torch.logical_or(masks_pred, masks_true).sum((1, 2, 3))
-    return torch.where(union != 0, inters / union, 0)
+# def get_batch_iou(masks_pred, masks_true):
+#     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
+#     """
+#     Compute the intersection over union between two batches of binary masks.
+#
+#     :param masks_pred: predicted binary masks
+#         ->> shape: (B, 1, H, W); values: bin{0, 1}
+#     :param masks_true: target binary masks
+#         ->> shape: (B, 1, H, W); values: bin{0, 1}
+#     :return: IoU value for each element in the batch
+#         ->> shape: (B,); values: range[0, 1]
+#     """
+#     inters = torch.logical_and(masks_pred, masks_true).sum((2, 3))
+#     union = torch.logical_or(masks_pred, masks_true).sum((1, 2, 3))
+#     return torch.where(union != 0, inters / union, 0)
 
 def get_batch_iou_multiclass(masks_pred, masks_true):
     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
@@ -55,15 +54,14 @@ class Trainer(object):
     def __init__(self, cnf):
         # type: (Conf) -> None
         """
-        :param cnf: configuration object that contains all the
-            hyper-parameters and paths.
+        :param cnf: configuration object that contains all the hyperparameters and paths.
         """
 
         self.cnf = cnf
         # init model
-        self.model = UNet(input_channels=3, num_classes=10)
+        self.model = UNet(input_channels=3, num_classes=cnf.num_classes)
         self.model = self.model.to(cnf.device)
-        self.cmap = get_color_map(self.model.num_classes).to(cnf.device)
+        self.cmap = get_color_map(cnf.num_classes).to(cnf.device) #color map for the visualization of the results passed as args to decode_mask_rgb in validation
         # init optimizer
         self.optimizer = optim.AdamW(
             params=self.model.parameters(), lr=cnf.lr
@@ -74,15 +72,15 @@ class Trainer(object):
         self.train_loader = DataLoader(
             dataset=training_set, batch_size=cnf.batch_size,
             num_workers=cnf.n_workers, shuffle=True, pin_memory=True,
-            worker_init_fn=training_set.wif,
+            worker_init_fn=training_set.wif, collate_fn=training_set.collate_fn
         )
 
         # init val loader
-        val_set = CocoDS(cnf, mode='val')
+        val_set = CocoDS(cnf, mode='val', data_augmentation=False)
         self.val_loader = DataLoader(
             dataset=val_set, batch_size=cnf.batch_size,
             num_workers=1, shuffle=False, pin_memory=True,
-            worker_init_fn=val_set.wif_val,
+            worker_init_fn=val_set.wif_val
         )
 
         # self.post_proc = PostProcessor(out_ch_order='RGB')
@@ -303,17 +301,17 @@ class Trainer(object):
             self.epoch += 1
             self.save_ck()
 
-if __name__ == '__main__':
-
-    #Iou multiclasses test
-    masks_pred = torch.tensor([
-        [[[0, 1], [0, 0]], [[1, 0], [0, 0]], [[0, 0], [0, 0]]]
-    ], dtype=torch.uint8)  # Shape: (1, 3, 2, 2)
-
-    masks_true = torch.tensor([
-        [[[0, 1], [0, 0]], [[1, 0], [0, 0]], [[0, 0], [0, 0]]]
-    ], dtype=torch.uint8)  # Shape: (1, 3, 2, 2)
-
-    # Calcolo dell'IoU
-    iou = get_multiclass_iou(masks_pred, masks_true)
-    print("IoU:", iou)
+# if __name__ == '__main__':
+#
+#     #Iou multiclasses test
+#     masks_pred = torch.tensor([
+#         [[[0, 1], [0, 0]], [[1, 0], [0, 0]], [[0, 0], [0, 0]]]
+#     ], dtype=torch.uint8)  # Shape: (1, 3, 2, 2)
+#
+#     masks_true = torch.tensor([
+#         [[[0, 1], [0, 0]], [[1, 0], [0, 0]], [[0, 0], [0, 0]]]
+#     ], dtype=torch.uint8)  # Shape: (1, 3, 2, 2)
+#
+#     # Calcolo dell'IoU
+#     iou = get_batch_iou_multiclass(masks_pred, masks_true)
+#     print("IoU:", iou)

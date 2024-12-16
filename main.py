@@ -27,7 +27,7 @@ def main(exp_name, conf_file_path, seed):
     # ask the user to enter it
     if exp_name is None:
         # exp_name = click.prompt('▶ experiment name', default='default')
-        exp_name = 'default'
+        exp_name = '1class'
 
     # if `exp_name` contains '!',
     # `log_each_step` becomes `False`

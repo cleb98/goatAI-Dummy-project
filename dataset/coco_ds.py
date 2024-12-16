@@ -14,6 +14,8 @@ from pycocotools.coco import COCO
 from pre_processing import PreProcessor
 from data_augmentation import DataAugmentation
 from torchvision.transforms import Resize, InterpolationMode
+import torchvision.transforms.functional as F
+
 
 
 
@@ -24,14 +26,14 @@ class CocoDS(Dataset):
     ->> y: Corresponding mask with 10 channels saved in .npy format (_mask.npy)
     """
 
-    def __init__(self, cnf, mode):
-        # type: (Conf, str) -> None
+    def __init__(self, cnf, mode, data_augmentation = True, resize_size=(256, 256)):
+        # type: (Conf, str, bool) -> None
         """
         :param cnf: configuration object
         :param mode: dataset working mode;
             ->> values in {'train', 'val'}
-        :param annotations_file: COCO annotations file path
-        :param masks_dir: Directory containing masks in .npy format
+        :param data_augmentation: if `True`, data augmentation is applied
+        :param resize_size: size to which the input image and mask are resized
         """
         self.cnf = cnf
         self.mode = mode
@@ -44,7 +46,9 @@ class CocoDS(Dataset):
         self.coco = COCO(self.annotation)
         self.img_ids = self.coco.getImgIds()
         self.pre_proc = PreProcessor(unsqueeze=False, device='cpu')
-        self.aug_data = DataAugmentation()
+        self.resize_size = resize_size
+        if data_augmentation:
+            self.da = DataAugmentation(resize_size)
 
     def __len__(self):
         # type: () -> int
@@ -70,16 +74,36 @@ class CocoDS(Dataset):
         # read input RGB image
         x_img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
         # load corresponding mask
-        y_mask = np.load(mask_path)
-        # apply preprocessing to input image to get tensor
+        y = torch.from_numpy(np.load(mask_path)).float() #do not use pre_proc.apply(y), will apply toTensor
+        if self.cnf.num_classes != y.shape[0]:
+            y = y[:self.cnf.num_classes] #prendo solo i primi num_classes canali
         x = self.pre_proc.apply(x_img)
-        y = torch.from_numpy(y_mask).float()
-        y = Resize((256, 256), interpolation=InterpolationMode.NEAREST)(y) #resize the mask using nearest interpolation to mantain the binary format for the mask
-        # y = self.pre_proc.apply(y_mask.transpose(1, 2, 0), binary=True, binary_threshold=0.3)
-        #data augmentation if in training mode
-        if self.mode == 'train':
-            x, y = self.aug_data.random_flip(x, y)
+        #resize input image and mask
+        x, y = self.resize(x, y)
         return x, y
+
+    def resize(self, x, y):
+        """
+        Resizes the input and mask to the specified size.
+        """
+        x = F.resize(x, self.resize_size, interpolation=InterpolationMode.BILINEAR)
+        y = F.resize(y, self.resize_size, interpolation=InterpolationMode.NEAREST)
+        return x, y
+
+    def collate_fn(self, batch):
+        """
+        Custom collate function for applying augmentations to a batch.
+        """
+        x_batch, y_batch = zip(*batch)
+        x_batch = torch.stack(x_batch)
+        y_batch = torch.stack(y_batch)
+
+        if self.da:  # Apply data augmentation only if enabled
+            x_batch, y_batch = self.da.apply(x_batch, y_batch)
+
+        return x_batch, y_batch
+
+        return x_batch, y_batch
 
     @staticmethod
     def wif(worker_id):

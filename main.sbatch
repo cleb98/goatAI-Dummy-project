@@ -1,32 +1,23 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=40 # Inserisci la quantità di memoria richiesta
+#SBATCH --mem=40G
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00
-#SBATCH --job-name=unet-coco
+#SBATCH --job-name=unet-coco-multilabel-1
 #SBATCH --partition=all_usr_prod
 #SBATCH --account=tesi_cbellucci
-#SBATCH -e slurm-%j.err
-#SBATCH -o slurm-%j.out
+#SBATCH -e slurm-log/%x-%j.err
+#SBATCH -o slurm-log/%x-%j.out
+# i file di log, .err/.out vengono salvati nella cartella slurm-log con nome <job-name>-<job-id>.err/.out
 
-# Attiva l'ambiente conda in cui hai installato PyTorch
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/usr/local/anaconda3' 'shell.bash' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/usr/local/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/usr/local/anaconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/usr/local/anaconda3/bin/:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
 
+# Creazione della cartella slurm-log (se non esiste)
+mkdir -p slurm-log
+
+# Carica Conda e attiva l'ambiente
+source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate ptbase
-export PYTHONPATH='/usr/local/anaconda3/bin/python' # Modifica il percorso Python se necessario
 
+# Esegui lo script Python
 python main.py

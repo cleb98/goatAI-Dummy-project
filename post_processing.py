@@ -14,18 +14,22 @@ def get_color_map(num_classes = 10):
     :param num_classes: total number of classes
     :return: a tensor representing a colormap with distinct rgb colors for each class
     """
-    colormap = plt.get_cmap('tab10', num_classes)
+    cmap = 'tab10'
+    if num_classes > plt.get_cmap(cmap).N:
+        raise ValueError("Too many categories for colormap.")
+    if num_classes < 1:
+        raise ValueError("at least one class is required")
+    colormap = plt.get_cmap(cmap, num_classes)
     cmap = (colormap(np.arange(num_classes))[:, :3] * 255).astype(np.uint8)
     return torch.from_numpy(cmap)
 
 def decode_mask_rgb(img, colormap, background_color = (0, 0 , 0)):
     # type
     """
-    Decode an image with n channels into an RGB mask with distinct colors for each class.
+    Decode an image with C channels into an RGB mask with distinct colors for each class.
     :param img: immagine con n canali (B, C, H, W)
-    :param num_classes: numero totale di classi
+    :param colormap: tensor with sape (C, 3) with C different rgb color used to get the rgb version of the target masks
     :param background_color: colore RGB per i pixel di background
-    :param colormap: tensor with sape (10, 3) with 10 different rgb color used to get the rgb version of the target masks
     :return: immagine RGB con colori distinti per classe
     """
     background_mask = torch.all(img == 0, dim = 1) #identify background pixels (B, H, W)
@@ -41,21 +45,6 @@ def decode_mask_rgb(img, colormap, background_color = (0, 0 , 0)):
     # set background color to background pixels using fancy indexing
     decoded_img = rgb_colors[class_map + 1]  #color_map+1 because currently we have class_map [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9] we want to map it to range [0, 10]
     return decoded_img.permute(0, 3, 1, 2)
-
-# def decode_mask(img):
-#     #type: (torch.Tensor) -> torch.Tensor
-#     '''
-#     Decodes the image with n channels to a single channel grayscale mask
-#     :param img: tensor with n channels
-#     :return: img_decoded: single channel mask torch tensor in uint8
-#     '''
-#     background_mask = torch.all(img == 0, dim=1) #shape = (B,1,H,W)
-#     back = torch.zeros_like(img, dtype=torch.int8).sum(dim=1) #shape = (B,1,H,W)
-#     back[background_mask] = -1 #background pixels mapped to -1
-#     img = img.argmax(dim=1) + back #pixels ==0 are now class 0 (not background) and pixels == -1 are background
-#     img = (img + 1) * 255 / 10 #background is set from -1 to 0 and class i is set to
-#     #add channel dim (B, 1, H, W) with values in range [0, 255]
-#     return img.unsqueeze(1).to(torch.uint8)
 
 #morph operation used to postpèrocess the predicted binary mask
 def morphological_transform(y_pred):

@@ -124,11 +124,11 @@ class DatasetCreator:
 if __name__ == '__main__':
     # Percorsi
     train_annotations_file = '/work/tesi_cbellucci/coco/annotations/instances_train2017.json'
-    output_train = '/work/tesi_cbellucci/coco/annotations/filtered_instances_train2017.json'
+    output_train = '/work/tesi_cbellucci/coco/annotations/1class_train.json'
     val_ann_file = '/work/tesi_cbellucci/coco/annotations/instances_val2017.json'
-    output_val = '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
+    output_val = '/work/tesi_cbellucci/coco/annotations/1class_val.json'
 
     # Crea il json (formato coco) con dataset filtrato
     dc = DatasetCreator(train_annotations_file, val_ann_file, output_train, output_val)
-    dc.initialize_filters(n_train_samples=1000, n_val_samples=100, n_classes=10)
+    dc.initialize_filters(n_train_samples=1000, n_val_samples=100, n_classes=1)
     dc.get_filtered_datasets()

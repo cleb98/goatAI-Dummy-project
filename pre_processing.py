@@ -16,7 +16,6 @@ class PreProcessor(object):
         self.unsqueeze = unsqueeze
         self.to_tensor = transforms.ToTensor()
         self.device = device
-        self.resize = transforms.Resize((256, 256))
 
 
     def apply(self, img, binary=False, binary_threshold=0.5):
@@ -33,11 +32,8 @@ class PreProcessor(object):
         """
         # (1) numpy array to torch tensor
         x = self.to_tensor(img) #rovina y_true perche è gia fra 0 e 1
-        # (1.1) resize
-        x = self.resize(x)
         # (2) move to device
         x = x.to(self.device)
-
         # # if binary is True, apply binarization
         # if binary:
         #     x = torch.where(x > binary_threshold, 1, 0)
