@@ -15,7 +15,7 @@ from pre_processing import PreProcessor
 from data_augmentation import DataAugmentation
 from torchvision.transforms import Resize, InterpolationMode
 import torchvision.transforms.functional as F
-
+import json
 
 
 
@@ -49,6 +49,7 @@ class CocoDS(Dataset):
         self.resize_size = resize_size
         if data_augmentation:
             self.da = DataAugmentation(resize_size)
+        self.cat_info = json.load(open(self.masks_dir + '/img_classes.json'))
 
     def __len__(self):
         # type: () -> int
@@ -100,8 +101,6 @@ class CocoDS(Dataset):
 
         if self.da:  # Apply data augmentation only if enabled
             x_batch, y_batch = self.da.apply(x_batch, y_batch)
-
-        return x_batch, y_batch
 
         return x_batch, y_batch
 
