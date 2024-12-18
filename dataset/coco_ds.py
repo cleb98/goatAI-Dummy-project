@@ -15,7 +15,7 @@ from pre_processing import PreProcessor
 from data_augmentation import DataAugmentation
 from torchvision.transforms import Resize, InterpolationMode
 import torchvision.transforms.functional as F
-
+import json
 
 
 
@@ -49,6 +49,7 @@ class CocoDS(Dataset):
         self.resize_size = resize_size
         if data_augmentation:
             self.da = DataAugmentation(resize_size)
+        self.cat_info = json.load(open(self.masks_dir + '/img_classes.json'))
 
     def __len__(self):
         # type: () -> int
@@ -103,8 +104,6 @@ class CocoDS(Dataset):
 
         return x_batch, y_batch
 
-        return x_batch, y_batch
-
     @staticmethod
     def wif(worker_id):
         # type: (int) -> None
@@ -131,13 +130,39 @@ class CocoDS(Dataset):
 
 
 def main():
-    # annotations_file = '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
-    # masks_dir = Path('/work/tesi_cbellucci/coco/images/val_masks')
-    ds = CocoDS(cnf=Conf(exp_name='default'), mode='val')
+    from visual_utils import apply_mask_overlay, tensor_to_cv2
+    from matplotlib import pyplot as plt
+    from torch.utils.data import DataLoader
 
-    for i in range(len(ds)):
-        x, y = ds[i]
-        print(f'Example #{i}: x.shape={x.shape}, y.shape={y.shape}')
+    cnf = Conf(exp_name='default')
+    ds = CocoDS(cnf=cnf, mode='train')
+    loader = DataLoader(
+        dataset=ds, batch_size=cnf.batch_size,
+        num_workers=1, shuffle=False, pin_memory=True,
+        worker_init_fn=ds.wif, collate_fn=ds.collate_fn
+    )
+
+    for i, sample in enumerate(loader):
+        x, y = sample
+
+        # show the first 8 examples (for debugging)
+        if i < 8:
+            x, y = x[0], y[0]
+            overlay = apply_mask_overlay(x, y)
+            x = tensor_to_cv2(x)
+            overlay = tensor_to_cv2(overlay)
+            fig, ax = plt.subplots(1, 2, figsize=(8, 5))
+            ax[0].imshow(x)
+            ax[1].imshow(overlay)
+            ax[0].title.set_text('Input Image')
+            ax[1].title.set_text('Mask Overlay')
+            ax[0].axis('off')
+            ax[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+            plt.close('all')
+        else:
+            print(f'Example #{i}: x.shape={x.shape}, y.shape={y.shape}')
 
 
 if __name__ == '__main__':

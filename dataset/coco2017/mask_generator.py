@@ -85,15 +85,15 @@ def generate_mask(annotations_files, images_dir, output_dir):
 
 
 if __name__ == '__main__':
-    # # Generate masks for validation images
-    # annotations_files = '/work/tesi_cbellucci/coco/annotations/filtered_instances_val2017.json'
-    # images_dir = '/work/tesi_cbellucci/coco/images/val'
-    # output_dir = '/work/tesi_cbellucci/coco/images/val_masks'
-    # print('Generating masks for validation images...')
-    # generate_mask(annotations_files, images_dir, output_dir)
+    # Generate masks for validation images
+    annotations_files = '/work/tesi_cbellucci/coco/annotations/1class_val.json'
+    images_dir = '/work/tesi_cbellucci/coco/images/val'
+    output_dir = '/work/tesi_cbellucci/coco/images/val_masks'
+    print('Generating masks for validation images...')
+    generate_mask(annotations_files, images_dir, output_dir)
 
     # Generate masks for training images
-    annotations_files = '/work/tesi_cbellucci/coco/annotations/filtered_instances_train2017.json'
+    annotations_files = '/work/tesi_cbellucci/coco/annotations/1class_train.json'
     images_dir = '/work/tesi_cbellucci/coco/images/train'
     output_dir = '/work/tesi_cbellucci/coco/images/train_masks'
     print('Generating masks for training images...')

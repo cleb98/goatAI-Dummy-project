@@ -67,7 +67,9 @@ class Trainer(object):
             params=self.model.parameters(), lr=cnf.lr
         )
 
-        # init train loader
+
+        #if collate_fn=training_set.collate_fn, data augmentation is applied at batch level on device
+        #take in account that currently DA is made in coco_ds.py, during data loading
         training_set = CocoDS(cnf, mode='train')
         self.train_loader = DataLoader(
             dataset=training_set, batch_size=cnf.batch_size,

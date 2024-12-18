@@ -17,9 +17,9 @@ BATCH_SIZE: 16
 DS_ROOT: '/work/tesi_cbellucci/coco/images/'
 #in TRAIN_ANNOTATION and VAL_ANNOTATION there are the info about the images and the masks to use for training and validation
 #the dataset is a subset of the original COCO dataset, filtered to have a balanced dataset of 1000 images for 10 classes
-TRAIN_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/1class_train.json'
+TRAIN_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/1class_train_filtered.json'
 #filtered_instances_train2017.json'
-VAL_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/1class_val.json'
+VAL_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/1class_val_filtered.json'
 #filtered_instances_val2017.json'
-TRAIN_MASK: '/work/tesi_cbellucci/coco/images/train_masks'
-VAL_MASK: '/work/tesi_cbellucci/coco/images/val_masks'
+TRAIN_MASK: '/work/tesi_cbellucci/coco/images/train_masks/1class'
+VAL_MASK: '/work/tesi_cbellucci/coco/images/val_masks/1class'
