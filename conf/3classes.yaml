@@ -7,7 +7,7 @@
 LR: 0.001
 EPOCHS: 300
 MAX_PATIENCE: 100
-NUM_CLASSES: 10
+NUM_CLASSES: 3
 # model parameters
 DEVICE: 'cuda'
 
@@ -16,10 +16,10 @@ N_WORKERS: 4
 BATCH_SIZE: 16
 DS_ROOT: '/work/tesi_cbellucci/coco/images/'
 #in TRAIN_ANNOTATION and VAL_ANNOTATION there are the info about the images and the masks to use for training and validation
-#the dataset is a subset of the original COCO dataset, filtered to have a balanced dataset of 1000 images for 10 classes
-TRAIN_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/10class_train.json'
+#the dataset is a subset of the original COCO dataset, filtered to have a balanced dataset of 1000 images for 3 classes
+TRAIN_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/3class_train.json'
 #filtered_instances_train2017.json'
-VAL_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/10class_val.json'
+VAL_ANNOTATION: '/work/tesi_cbellucci/coco/annotations/3class_val.json'
 #filtered_instances_val2017.json'
-TRAIN_MASK: '/work/tesi_cbellucci/coco/images/train_masks/10class'
-VAL_MASK: '/work/tesi_cbellucci/coco/images/val_masks/10class'
+TRAIN_MASK: '/work/tesi_cbellucci/coco/images/train_masks/3class'
+VAL_MASK: '/work/tesi_cbellucci/coco/images/val_masks/3class'
