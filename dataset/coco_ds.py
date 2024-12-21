@@ -16,7 +16,8 @@ from data_augmentation import DataAugmentation
 from torchvision.transforms import Resize, InterpolationMode
 import torchvision.transforms.functional as F
 import json
-
+from visual_utils import decode_and_apply_mask_overlay
+import matplotlib.pyplot as plt
 
 
 class CocoDS(Dataset):
@@ -129,12 +130,50 @@ class CocoDS(Dataset):
         torch.manual_seed(seed)
 
 
+def plot_grid(tensor, title="Batch Grid"):
+    """
+    Display a grid of images from a tensor using matplotlib.
+
+    :param tensor: Input tensor of shape (B, C, H, W), where C = 1 (grayscale) or C = 3 (RGB).
+    :param title: Title of the grid display.
+    """
+    # Ensure the tensor is on CPU and detached for visualization
+    tensor = tensor.detach().cpu()
+
+    B, C, H, W = tensor.shape
+
+    # Determine grid size (e.g., square-like grid)
+    cols = int(torch.sqrt(torch.tensor(B)).item())
+    rows = int(B / cols)
+
+    # Create the grid for images
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 15))
+    axes = axes.flatten()  # Flatten in case of a single row or column
+
+    for i in range(rows * cols):
+        if i < B:
+            img = tensor[i].permute(1, 2, 0).numpy()  # (C, H, W) -> (H, W, C)
+            if C == 1:
+                img = img.squeeze(-1)  # Remove channel dimension for grayscale
+                axes[i].imshow(img, cmap="gray")
+            else:
+                axes[i].imshow(img)
+            axes[i].axis('off')  # Turn off axis for better visualization
+        else:
+            axes[i].axis('off')  # Hide extra subplots
+
+    plt.suptitle(title, fontsize=16)
+    plt.tight_layout()
+    plt.show()
+
+
+
 def main():
     from visual_utils import apply_mask_overlay, tensor_to_cv2
     from matplotlib import pyplot as plt
     from torch.utils.data import DataLoader
 
-    cnf = Conf(exp_name='default')
+    cnf = Conf(exp_name='3classes')
     ds = CocoDS(cnf=cnf, mode='train')
     loader = DataLoader(
         dataset=ds, batch_size=cnf.batch_size,
@@ -146,21 +185,28 @@ def main():
         x, y = sample
 
         # show the first 8 examples (for debugging)
-        if i < 8:
-            x, y = x[0], y[0]
-            overlay = apply_mask_overlay(x, y)
-            x = tensor_to_cv2(x)
-            overlay = tensor_to_cv2(overlay)
-            fig, ax = plt.subplots(1, 2, figsize=(8, 5))
-            ax[0].imshow(x)
-            ax[1].imshow(overlay)
-            ax[0].title.set_text('Input Image')
-            ax[1].title.set_text('Mask Overlay')
-            ax[0].axis('off')
-            ax[1].axis('off')
-            plt.tight_layout()
-            plt.show()
-            plt.close('all')
+        # if i < 8:
+        #     x, y = x[0], y[0]
+        #     overlay = apply_mask_overlay(x, y)
+        #     x = tensor_to_cv2(x)
+        #     overlay = tensor_to_cv2(overlay)
+        #     fig, ax = plt.subplots(1, 2, figsize=(8, 5))
+        #     ax[0].imshow(x)
+        #     ax[1].imshow(overlay)
+        #     ax[0].title.set_text('Input Image')
+        #     ax[1].title.set_text('Mask Overlay')
+        #     ax[0].axis('off')
+        #     ax[1].axis('off')
+        #     plt.tight_layout()
+        #     plt.show()
+        #     plt.close('all')
+        # else:
+        #     print(f'Example #{i}: x.shape={x.shape}, y.shape={y.shape}')
+        #per ogni batch stampo la griglia 16*16 delle img decoded
+        if i == 0:
+            decoded = decode_and_apply_mask_overlay(x, y)
+            #custom function to display the grid of a batch with matplotlib
+            plot_grid(decoded, title="Batch Grid")
         else:
             print(f'Example #{i}: x.shape={x.shape}, y.shape={y.shape}')
 

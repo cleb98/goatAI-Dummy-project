@@ -94,6 +94,46 @@ def tensor_to_cv2(x):
     img = img.transpose(1, 2, 0)
     return img
 
+def decode_and_apply_mask_overlay(img, masks):
+    # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
+    """
+    Decodes binary masks into RGB images and applies colored overlays to a batch of images.
+
+    :param img: Input images to which the masks will be applied.
+        ->> shape: (B, 3, H, W)
+        ->> values in range float[0, 1]
+    :param masks: Binary masks indicating regions to overlay.
+        ->> shape: (B, N_masks, H, W)
+        ->> values in range bin{0, 1}
+    :return: Images with colored mask overlays applied.
+        ->> shape: (B, 3, H, W)
+        ->> values in range float[0, 1]
+    """
+    B, _, H, W = img.shape
+    _, N_masks, _, _ = masks.shape
+
+    # Generate a colormap
+    colormap = get_random_colors(N_masks)
+    class_colors = torch.tensor(colormap, dtype=torch.uint8, device=img.device)
+
+    # Decode masks into RGB
+    background_color = torch.tensor([0, 0, 0], dtype=torch.uint8, device=img.device).unsqueeze(0)
+    rgb_colors = torch.cat([background_color, class_colors], dim=0)
+
+    # Background pixels (B, H, W)
+    background_mask = torch.all(masks == 0, dim=1)
+    class_map = masks.argmax(dim=1)  # (B, H, W)
+    class_map[background_mask] = -1  # Set background to -1
+
+    # Decode into RGB (B, H, W, 3) -> (B, 3, H, W)
+    decoded_mask = rgb_colors[class_map + 1].permute(0, 3, 1, 2).float() / 255.0
+
+    # Apply overlay
+    overlay = img.clone() * 0.4 + decoded_mask * 0.6
+
+    return overlay
+
+
 
 def demo():
     # generate a grid of random colors
