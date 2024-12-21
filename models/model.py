@@ -100,7 +100,7 @@ class UNet(BaseModel):
     UNet model for segmentation of images with num_classes classes
     """
 
-    def __init__(self, input_channels = 3, num_classes= 10):
+    def __init__(self, input_channels = 3, num_classes= 1):
         # type: (int, int) -> None
 
         super(UNet, self).__init__()

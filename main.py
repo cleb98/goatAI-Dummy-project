@@ -28,7 +28,6 @@ def run_exp(exp_name, conf_file_path = None, seed = None):
     if exp_name is None:
         # exp_name = click.prompt('▶ experiment name', default='default')
         exp_name = 'default'
-        exp_name = exp_name
 
     # if `exp_name` contains '!',
     # `log_each_step` becomes `False`
@@ -61,5 +60,5 @@ srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gp
 '''
 if __name__ == '__main__':
     # run_exp()
-    run_exp(exp_name='3class')
+    run_exp(exp_name='3classes')
 
