@@ -13,7 +13,7 @@ from models import UNet
 from post_processing import binarize, get_color_map, decode_mask_rgb
 from progress_bar import ProgressBar
 from scheduler import LRScheduler
-
+from visual_utils import decode_and_apply_mask_overlay
 
 # def get_batch_iou(masks_pred, masks_true):
 #     # type: (torch.Tensor, torch.Tensor) -> torch.Tensor
@@ -231,9 +231,10 @@ class Trainer(object):
 
             #reshaping tensors for visualization purposes
             # from c = 10 to c = 3 for visualization purposes
-            y_pred = decode_mask_rgb(y_pred, colormap=self.cmap).float() / 255.0
-            y_true = decode_mask_rgb(y_true, colormap=self.cmap).float() / 255.0
-
+            # y_pred = decode_mask_rgb(y_pred, colormap=self.cmap).float() / 255.0
+            # y_true = decode_mask_rgb(y_true, colormap=self.cmap).float() / 255.0
+            y_pred = decode_and_apply_mask_overlay(x, y_pred)
+            y_true = decode_and_apply_mask_overlay(x, y_true)
             # draw results for this step in a 3 rows grid:
             # row #1: input (x)
             # row #2: predicted_output (y_pred)

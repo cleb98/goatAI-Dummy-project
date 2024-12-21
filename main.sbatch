@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=40G
+#SBATCH --mem=30G
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00
-#SBATCH --job-name=1-class-coco
+#SBATCH --job-name=3-class-coco
 #SBATCH --partition=all_usr_prod
 #SBATCH --account=tesi_cbellucci
 #SBATCH -e slurm-log/%x-%j.err
