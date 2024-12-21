@@ -61,5 +61,5 @@ srun --partition=all_usr_prod --account=tesi_cbellucci --time=00:15:00 --gres=gp
 '''
 if __name__ == '__main__':
     # run_exp()
-    run_exp(exp_name='1class')
+    run_exp(exp_name='3class')
 

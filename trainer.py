@@ -47,7 +47,13 @@ def get_batch_iou_multiclass(masks_pred, masks_true):
 
     inters = torch.logical_and(masks_pred, masks_true).sum((2, 3))
     union = torch.logical_or(masks_pred, masks_true).sum((2, 3))
-    return torch.where(union != 0, inters / union, 0)
+    #tensore B,C raprresentante gli indici dei canali della masks_true tutti nulli
+    zero_channel = torch.all(masks_true == 0, dim=(2, 3))
+    IoUs = torch.where(union != 0, inters / union, 0)
+    #setto a nan gli IoU relativi ai canali della masks_true tutti nulli
+    IoUs[zero_channel] = torch.tensor(float('nan'))
+    return IoUs
+
 
 class Trainer(object):
 
@@ -242,11 +248,11 @@ class Trainer(object):
                 img_tensor=grid, global_step=self.epoch
             )
 
-        val_iou_classes = torch.cat(val_iou).mean(dim=0)  # concatenate all the IoU values and take the mean of the whole validation set for each class
+        val_iou_classes = torch.cat(val_iou).nanmean(dim=0)  # concatenate all the IoU values and take the mean of the whole validation set for each class
         val_acc_classes = torch.cat(val_acc).to(torch.float32).mean(dim=0) #non sicuro che serva .to() val acc è gia un tensore!(rivedere perchè è qua)
         # save best model
-        mean_iou = val_iou_classes.mean().item() #mean of the mean IoU for each class
-        mean_acc = val_acc_classes.mean().item() #mean of the mean accuracy for each class
+        mean_iou = val_iou_classes.nanmean().item() #mean of the mean IoU for each class
+        mean_acc = val_acc_classes.nanmean().item() #mean of the mean accuracy for each class
 
         first_time = self.best_val_iou is None
         if first_time or (mean_iou > self.best_val_iou):
@@ -317,3 +323,4 @@ class Trainer(object):
 #     # Calcolo dell'IoU
 #     iou = get_batch_iou_multiclass(masks_pred, masks_true)
 #     print("IoU:", iou)
+#     print("mean IoU:", iou.nanmean().item())
